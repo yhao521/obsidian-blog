@@ -6,6 +6,7 @@ export interface MyPluginSettings {
 	sourceDirectory: string;
 	tempDirectory: string;
 	hexoPath: string;
+	templateDirectory: string;
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	sourceDirectory: "",
 	tempDirectory: "",
 	hexoPath: "hexo",
+	templateDirectory: "",
 };
 
 export class SampleSettingTab extends PluginSettingTab {
@@ -82,6 +84,21 @@ export class SampleSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hexoPath)
 					.onChange(async (value) => {
 						this.plugin.settings.hexoPath = value || "hexo";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Template directory")
+			.setDesc(
+				"Directory containing Hexo template (themes, _config.yml, etc). Will be copied to temp directory before deployment.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("/path/to/hexo-template")
+					.setValue(this.plugin.settings.templateDirectory)
+					.onChange(async (value) => {
+						this.plugin.settings.templateDirectory = value;
 						await this.plugin.saveSettings();
 					}),
 			);
