@@ -37,7 +37,7 @@ export class SampleSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("Enter your secret")
 					.setValue(this.plugin.settings.mySetting)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						this.plugin.settings.mySetting = value;
 						await this.plugin.saveSettings();
 					}),
@@ -52,7 +52,7 @@ export class SampleSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("/path/to/source")
 					.setValue(this.plugin.settings.sourceDirectory)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						this.plugin.settings.sourceDirectory = value;
 						await this.plugin.saveSettings();
 					}),
@@ -67,7 +67,7 @@ export class SampleSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("/path/to/hexo-temp")
 					.setValue(this.plugin.settings.tempDirectory)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						this.plugin.settings.tempDirectory = value;
 						await this.plugin.saveSettings();
 					}),
@@ -82,7 +82,7 @@ export class SampleSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("hexo")
 					.setValue(this.plugin.settings.hexoPath)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						this.plugin.settings.hexoPath = value || "hexo";
 						await this.plugin.saveSettings();
 					}),
@@ -97,7 +97,7 @@ export class SampleSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("/path/to/hexo-template")
 					.setValue(this.plugin.settings.templateDirectory)
-					.onChange(async (value) => {
+					.onChange(async (value: string) => {
 						this.plugin.settings.templateDirectory = value;
 						await this.plugin.saveSettings();
 					}),
