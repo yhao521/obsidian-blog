@@ -1,5 +1,6 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { deployHexo } from './commands/hexo-deploy';
 
 // Remember to rename these classes and interfaces!
 
@@ -54,6 +55,13 @@ export default class MyPlugin extends Plugin {
 				}
 				return false;
 			}
+		});
+
+		// This adds a command to deploy Hexo blog
+		this.addCommand({
+			id: 'deploy-hexo-blog',
+			name: 'Deploy Hexo blog',
+			callback: () => deployHexo(this),
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
