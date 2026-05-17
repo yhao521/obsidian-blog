@@ -106,11 +106,26 @@ export async function createHexoTemplate(
 		const siteDescription = hexoConfig?.siteDescription || "";
 		const siteKeywords = hexoConfig?.siteKeywords || "";
 		const siteAuthor = hexoConfig?.siteAuthor || "Your Name";
-		const siteAvatar = hexoConfig?.siteAvatar || "/img/avatar.png";
 		const siteLanguage = hexoConfig?.siteLanguage || "zh-CN";
 		const siteTimezone = hexoConfig?.siteTimezone || "";
 		const siteUrl = hexoConfig?.siteUrl || "https://your-domain.com";
-		const bannerImg = hexoConfig?.bannerImg || "/img/bg.png";
+
+		// 转换图片路径为 Hexo 相对路径
+		const convertToHexoPath = (imgPath: string): string => {
+			if (!imgPath) return "/img/bg.png";
+			// 如果已经是相对路径（以 / 开头），直接返回
+			if (imgPath.startsWith("/")) return imgPath;
+			// 移除模板目录前缀，如 "模板/source/images/bg.png" -> "/images/bg.png"
+			const normalized = imgPath.replace(/^.*?source\//, "/");
+			return normalized.startsWith("/") ? normalized : `/${normalized}`;
+		};
+
+		const siteAvatar = convertToHexoPath(
+			hexoConfig?.siteAvatar || "/img/avatar.png",
+		);
+		const bannerImg = convertToHexoPath(
+			hexoConfig?.bannerImg || "/img/bg.png",
+		);
 
 		// 创建 _config.yml 配置文件
 		const configContent = `# Hexo Configuration
@@ -276,6 +291,7 @@ ${
 		// 创建主题配置文件
 		const themeConfigContent = generateThemeConfig(theme, {
 			siteTitle,
+			siteSubtitle,
 			siteAuthor,
 			siteAvatar,
 			siteUrl,
@@ -431,6 +447,7 @@ function generateThemeConfig(
 	theme: string,
 	options: {
 		siteTitle?: string;
+		siteSubtitle?: string;
 		siteAuthor?: string;
 		siteAvatar?: string;
 		siteUrl?: string;
@@ -454,6 +471,7 @@ function generateThemeConfig(
  */
 function generateFluidConfig(options: {
 	siteTitle?: string;
+	siteSubtitle?: string;
 	siteAuthor?: string;
 	siteAvatar?: string;
 	siteUrl?: string;
@@ -461,6 +479,7 @@ function generateFluidConfig(options: {
 }): string {
 	const {
 		siteTitle = "My Blog",
+		siteSubtitle = "",
 		siteAuthor = "Author",
 		siteAvatar = "/img/avatar.png",
 		siteUrl = "https://example.com",
@@ -877,6 +896,64 @@ scroll_down_arrow:
 # Scroll top arrow
 scroll_top_arrow:
   enable: true
+
+#---------------------------
+# 归档页
+# Archive Page
+#---------------------------
+archive:
+  banner_img: ${bannerImg}
+  banner_img_height: 60
+  banner_mask_alpha: 0.3
+
+#---------------------------
+# 分类页
+# Category Page
+#---------------------------
+category:
+  banner_img: ${bannerImg}
+  banner_img_height: 60
+  banner_mask_alpha: 0.3
+
+#---------------------------
+# 标签页
+# Tag Page
+#---------------------------
+tag:
+  enable: true
+  banner_img: ${bannerImg}
+  banner_img_height: 80
+  banner_mask_alpha: 0.3
+  tagcloud:
+    min_font: 15
+    max_font: 30
+    unit: px
+    start_color: "#BBBBEE"
+    end_color: "#337ab7"
+
+#---------------------------
+# 文章页
+# Post Page
+#---------------------------
+post:
+  banner_img: ${bannerImg}
+  banner_img_height: 60
+  banner_mask_alpha: 0.3
+
+#---------------------------
+# 关于页
+# about Page
+#---------------------------
+about:
+  banner_img: ${bannerImg}
+  banner_img_height: 60
+  banner_mask_alpha: 0.3
+  avatar: ${siteAvatar}
+  name: "${siteTitle}"
+  intro: "${siteSubtitle}"
+  icons:
+    - { class: "iconfont icon-github-fill", link: "${siteUrl}", tip: "GitHub" }
+    - { class: "iconfont icon-wechat-fill", qrcode: "/img/favicon.png" }
 
 # Open Graph metadata
 # See: https://hexo.io/docs/helpers.html#open-graph
