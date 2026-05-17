@@ -98,26 +98,27 @@ function validatePath(inputPath: string): boolean {
 export async function deployHexo(plugin: Plugin): Promise<void> {
 	const settings = (plugin as any).settings;
 
-	// 1. 验证配置
-	if (!settings.tempDirectory) {
-		new Notice("请先在设置中配置临时目录");
-		return;
-	}
-
-	// 2. 验证路径安全性
-	if (!validatePath(settings.tempDirectory)) {
-		new Notice("临时目录路径不安全");
-		return;
-	}
-
+	// 1. 验证路径安全性
 	if (settings.sourceDirectory && !validatePath(settings.sourceDirectory)) {
 		new Notice("源目录路径不安全");
 		return;
 	}
 
-	// 3. 准备临时目录
-	const tempDir = settings.tempDirectory;
+	if (
+		settings.templateDirectory &&
+		!validatePath(settings.templateDirectory)
+	) {
+		new Notice("模板目录路径不安全");
+		return;
+	}
+
+	// 2. 在 Vault 内创建隐藏临时目录
+	const vaultPath = plugin.app.vault.getRoot().path;
+	const tempDirName = settings.tempDirectoryName || ".hexo-temp";
+	const tempDir = path.join(vaultPath, tempDirName);
+
 	try {
+		// 确保临时目录存在
 		ensureDirectoryExists(tempDir);
 	} catch (error) {
 		const errorMessage =
@@ -126,13 +127,8 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		return;
 	}
 
-	// 4. 如果配置了模板目录,先复制模板
+	// 3. 如果配置了模板目录,先复制模板
 	if (settings.templateDirectory) {
-		if (!validatePath(settings.templateDirectory)) {
-			new Notice("模板目录路径不安全");
-			return;
-		}
-
 		const templateDir = settings.templateDirectory;
 		if (!fs.existsSync(templateDir)) {
 			new Notice("模板目录不存在,请检查配置");
@@ -164,7 +160,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		}
 	}
 
-	// 5. 检查临时目录是否包含 Hexo 项目
+	// 4. 检查临时目录是否包含 Hexo 项目
 	const hexoConfigPath = path.join(tempDir, "_config.yml");
 	if (!fs.existsSync(hexoConfigPath)) {
 		const proceed = confirm(
@@ -175,17 +171,17 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		}
 	}
 
-	// 6. 确定源目录
+	// 5. 确定源目录
 	const sourceDir =
 		settings.sourceDirectory || plugin.app.vault.getRoot().path;
 
-	// 7. 检查源目录和临时目录是否相同
+	// 6. 检查源目录和临时目录是否相同
 	if (path.resolve(sourceDir) === path.resolve(tempDir)) {
 		new Notice("源目录和临时目录不能相同");
 		return;
 	}
 
-	// 8. 复制源文档到临时目录的 source/_posts
+	// 7. 复制源文档到临时目录的 source/_posts
 	try {
 		new Notice("正在复制博客文章...");
 		const postsDir = path.join(tempDir, "source", "_posts");

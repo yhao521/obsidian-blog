@@ -6,3 +6,57 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* 博客插件输入框宽度 */
+.blog-plugin-input-tiny {
+    width: 120px !important;
+}
+
+.blog-plugin-input-small {
+    width: 200px !important;
+}
+
+.blog-plugin-input-medium {
+    width: 300px !important;
+}
+
+.blog-plugin-input-large {
+    width: 400px !important;
+}
+
+.blog-plugin-input-xwide {
+    width: 600px !important;
+}
+
+.blog-plugin-dropdown-wide {
+    width: 200px !important;
+}
+
+/* 多行文本域样式 */
+.blog-plugin-textarea {
+    width: 100% !important;
+    min-height: 100px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-modifier-form-field);
+    color: var(--text-normal);
+}
+
+/* 文本域设置容器 */
+.blog-plugin-textarea-setting {
+    display: block;
+}
+
+.blog-plugin-textarea-setting .setting-item-info {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.blog-plugin-textarea-setting .setting-item-control {
+    width: 100% !important;
+}
