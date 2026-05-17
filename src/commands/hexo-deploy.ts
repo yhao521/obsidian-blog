@@ -224,14 +224,31 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 8. 执行 Hexo 命令
-	const hexoPath = settings.hexoPath || "hexo";
+	const hexoPath = settings.hexoPath || "npx hexo";
 
 	try {
+		// 检查 Hexo 是否可用
+		try {
+			await execAsync(`${hexoPath} --version`, {
+				cwd: tempDir,
+				env: { ...process.env },
+			});
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			new Notice(
+				`Hexo 未找到: ${errorMessage}。请确认模板目录已运行 npm install 安装依赖，或在设置中配置正确的 Hexo 路径。`,
+			);
+			console.error("Hexo check error:", error);
+			return;
+		}
+
 		// 执行 hexo clean
 		new Notice("正在清理 Hexo...");
 		console.log("Executing: hexo clean");
 		const cleanResult = await execAsync(`${hexoPath} clean`, {
 			cwd: tempDir,
+			env: { ...process.env }, // 继承父进程环境变量
 		});
 		if (cleanResult.stdout)
 			console.log("Clean output:", cleanResult.stdout);
@@ -243,6 +260,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log("Executing: hexo deploy");
 		const deployResult = await execAsync(`${hexoPath} deploy`, {
 			cwd: tempDir,
+			env: { ...process.env }, // 继承父进程环境变量
 		});
 
 		new Notice("Hexo 部署成功!");

@@ -141,6 +141,36 @@ export class BlogSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	// 在指定路径创建模板
+	async createTemplateInDirectory(
+		path: string,
+		vaultPath: string,
+	): Promise<void> {
+		try {
+			await createHexoTemplate(this.app, path, vaultPath, {
+				theme: this.plugin.settings.hexoTheme,
+				deployType: this.plugin.settings.deployType,
+				deployRepo: this.plugin.settings.deployRepo,
+				deployBranch: this.plugin.settings.deployBranch,
+				siteTitle: this.plugin.settings.siteTitle,
+				siteSubtitle: this.plugin.settings.siteSubtitle,
+				siteDescription: this.plugin.settings.siteDescription,
+				siteKeywords: this.plugin.settings.siteKeywords,
+				siteAuthor: this.plugin.settings.siteAuthor,
+				siteAvatar: this.plugin.settings.siteAvatar,
+				siteLanguage: this.plugin.settings.siteLanguage,
+				siteTimezone: this.plugin.settings.siteTimezone,
+				siteUrl: this.plugin.settings.siteUrl,
+				bannerImg: this.plugin.settings.bannerImg,
+			});
+			this.plugin.settings.templateDirectory = path;
+			await this.plugin.saveSettings();
+			this.display();
+		} catch (_error) {
+			// 错误已在 createHexoTemplate 中处理
+		}
+	}
+
 	display(): void {
 		const { containerEl } = this;
 
@@ -228,65 +258,30 @@ export class BlogSettingTab extends PluginSettingTab {
 						adapter instanceof FileSystemAdapter
 							? adapter.getBasePath()
 							: "";
-					// 打开文件夹选择器选择创建位置
-					new FolderSuggestModal(
-						this.plugin,
-						"templateDirectory",
-						(path: string) => {
-							void (async () => {
-								try {
-									await createHexoTemplate(
-										this.app,
+
+					// 如果模板目录已有值,直接在当前路径创建
+					let targetPath = this.plugin.settings.templateDirectory;
+					if (!targetPath) {
+						// 如果为空,打开文件夹选择器
+						new FolderSuggestModal(
+							this.plugin,
+							"templateDirectory",
+							(path: string) => {
+								void (async () => {
+									await this.createTemplateInDirectory(
 										path,
 										vaultPath,
-										{
-											theme: this.plugin.settings
-												.hexoTheme,
-											deployType:
-												this.plugin.settings.deployType,
-											deployRepo:
-												this.plugin.settings.deployRepo,
-											deployBranch:
-												this.plugin.settings
-													.deployBranch,
-											siteTitle:
-												this.plugin.settings.siteTitle,
-											siteSubtitle:
-												this.plugin.settings
-													.siteSubtitle,
-											siteDescription:
-												this.plugin.settings
-													.siteDescription,
-											siteKeywords:
-												this.plugin.settings
-													.siteKeywords,
-											siteAuthor:
-												this.plugin.settings.siteAuthor,
-											siteAvatar:
-												this.plugin.settings.siteAvatar,
-											siteLanguage:
-												this.plugin.settings
-													.siteLanguage,
-											siteTimezone:
-												this.plugin.settings
-													.siteTimezone,
-											siteUrl:
-												this.plugin.settings.siteUrl,
-											bannerImg:
-												this.plugin.settings.bannerImg,
-										},
 									);
-									// 创建成功后自动设置为模板目录
-									this.plugin.settings.templateDirectory =
-										path;
-									await this.plugin.saveSettings();
-									this.display();
-								} catch (_error) {
-									// 错误已在 createHexoTemplate 中处理
-								}
-							})();
-						},
-					).open();
+								})();
+							},
+						).open();
+					} else {
+						// 有值则直接创建
+						await this.createTemplateInDirectory(
+							targetPath,
+							vaultPath,
+						);
+					}
 				});
 			})
 			.addText((text: TextComponent) =>
