@@ -161,7 +161,12 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		try {
 			new Notice("正在复制模板文件...");
 			console.log("Copying template from:", templateDir);
-			copyDirectory(templateDir, tempDir);
+			copyDirectory(templateDir, tempDir, [
+				".obsidian",
+				".git",
+				"node_modules",
+				"images",
+			]);
 			new Notice("模板复制完成");
 		} catch (error) {
 			const errorMessage =
