@@ -224,31 +224,66 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 8. 执行 Hexo 命令
-	const hexoPath = settings.hexoPath || "npx hexo";
+	// 确定要使用的 Hexo 命令
+	let finalHexoCommand = settings.hexoPath; // 用户自定义路径优先
+	if (!finalHexoCommand) {
+		// 自动检测：按优先级尝试
+		// 1. 尝试常用全局路径
+		const commonPaths = [
+			"/usr/local/bin/hexo",
+			"/opt/homebrew/bin/hexo",
+			"/usr/bin/hexo",
+		];
+		for (const hexoPath of commonPaths) {
+			try {
+				await execAsync(`"${hexoPath}" --version`, {
+					cwd: tempDir,
+					env: { ...process.env },
+				});
+				finalHexoCommand = hexoPath;
+				break;
+			} catch (_error) {
+				// 继续尝试下一个路径
+			}
+		}
+
+		// 2. 如果常用路径都没找到，尝试 zsh 环境下的 hexo
+		if (!finalHexoCommand) {
+			try {
+				await execAsync("/bin/zsh -l -c 'hexo --version'", {
+					cwd: tempDir,
+					env: { ...process.env },
+				});
+				finalHexoCommand = "hexo";
+			} catch (_error) {
+				// 3. 最后尝试 npx
+				try {
+					await execAsync("npx hexo --version", {
+						cwd: tempDir,
+						env: { ...process.env },
+					});
+					finalHexoCommand = "npx hexo";
+				} catch (_npxError) {
+					new Notice(
+						"Hexo 未找到。请确认已安装 Hexo（npm install -g hexo-cli），或在设置中配置正确的 Hexo 路径。",
+					);
+					return;
+				}
+			}
+		}
+	}
 
 	try {
-		// 检查 Hexo 是否可用
-		try {
-			await execAsync(`${hexoPath} --version`, {
-				cwd: tempDir,
-				env: { ...process.env },
-			});
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : String(error);
-			new Notice(
-				`Hexo 未找到: ${errorMessage}。请确认模板目录已运行 npm install 安装依赖，或在设置中配置正确的 Hexo 路径。`,
-			);
-			console.error("Hexo check error:", error);
-			return;
-		}
+		// 使用 zsh 登录 shell 执行，确保加载 .zshrc 中的环境变量
+		const execWithZsh = (cmd: string) => `/bin/zsh -l -c '${cmd}'`;
 
 		// 执行 hexo clean
 		new Notice("正在清理 Hexo...");
-		console.log("Executing: hexo clean");
-		const cleanResult = await execAsync(`${hexoPath} clean`, {
+		const cleanCmd = execWithZsh(`${finalHexoCommand} clean`);
+		console.log(`Executing: ${cleanCmd}`);
+		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
-			env: { ...process.env }, // 继承父进程环境变量
+			env: { ...process.env },
 		});
 		if (cleanResult.stdout)
 			console.log("Clean output:", cleanResult.stdout);
@@ -257,10 +292,11 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 		// 执行 hexo deploy
 		new Notice("正在部署 Hexo...");
-		console.log("Executing: hexo deploy");
-		const deployResult = await execAsync(`${hexoPath} deploy`, {
+		const deployCmd = execWithZsh(`${finalHexoCommand} deploy`);
+		console.log(`Executing: ${deployCmd}`);
+		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
-			env: { ...process.env }, // 继承父进程环境变量
+			env: { ...process.env },
 		});
 
 		new Notice("Hexo 部署成功!");
