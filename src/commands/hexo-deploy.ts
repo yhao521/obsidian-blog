@@ -277,6 +277,31 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		// 使用 zsh 登录 shell 执行，确保加载 .zshrc 中的环境变量
 		const execWithZsh = (cmd: string) => `/bin/zsh -l -c '${cmd}'`;
 
+		// 8.1 安装 Hexo 依赖（如果 package.json 存在且 node_modules 不存在）
+		const packageJsonPath = path.join(tempDir, "package.json");
+		const nodeModulesPath = path.join(tempDir, "node_modules");
+		if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
+			new Notice("正在安装 Hexo 依赖...");
+			const installCmd = execWithZsh("npm install");
+			console.log(`Executing: ${installCmd}`);
+			try {
+				const installResult = await execAsync(installCmd, {
+					cwd: tempDir,
+					env: { ...process.env },
+				});
+				if (installResult.stdout)
+					console.log("Install output:", installResult.stdout);
+				if (installResult.stderr)
+					console.warn("Install warnings:", installResult.stderr);
+				new Notice("依赖安装完成");
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+				new Notice(`依赖安装失败: ${errorMessage}`);
+				console.error("Install error:", error);
+			}
+		}
+
 		// 执行 hexo clean
 		new Notice("正在清理 Hexo...");
 		const cleanCmd = execWithZsh(`${finalHexoCommand} clean`);

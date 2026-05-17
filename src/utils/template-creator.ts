@@ -236,10 +236,35 @@ ${
 
 		// 创建 package.json
 		const packageContent = `{
-  "name": "hexo-blog-template",
-  "version": "1.0.0",
-  "description": "Hexo blog template created by Obsidian Blog Plugin",
-  "private": true
+  "name": "hexo-site",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "hexo generate",
+    "clean": "hexo clean",
+    "deploy": "hexo deploy",
+    "server": "hexo server"
+  },
+  "hexo": {
+    "version": "8.1.1"
+  },
+  "dependencies": {
+    "hexo": "^8.0.0",
+    "hexo-asset-image": "github:CodeFalling/hexo-asset-image",
+    "hexo-deployer-git": "^4.0.0",
+    "hexo-generator-archive": "^2.0.0",
+    "hexo-generator-category": "^2.0.0",
+    "hexo-generator-index": "^4.0.0",
+    "hexo-generator-tag": "^2.0.0",
+    "hexo-renderer-ejs": "^2.0.0",
+    "hexo-renderer-marked": "^7.0.0",
+    "hexo-renderer-stylus": "^3.0.1",
+    "hexo-server": "^3.0.0",
+    "hexo-theme-landscape": "^1.0.0"
+  },
+  "devDependencies": {
+    "hexo-theme-fluid": "^1.9.7"
+  }
 }
 `;
 		fs.writeFileSync(
