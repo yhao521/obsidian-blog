@@ -6,6 +6,7 @@ import {
 	ButtonComponent,
 	FuzzySuggestModal,
 	TFolder,
+	TFile,
 	FileSystemAdapter,
 	DropdownComponent,
 } from "obsidian";
@@ -53,6 +54,36 @@ class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	}
 }
 
+// 图片选择器 - 使用 Obsidian 原生的模糊搜索选择器
+class ImageSuggestModal extends FuzzySuggestModal<TFile> {
+	plugin: MyPlugin;
+	onSelect: (path: string) => void;
+
+	constructor(plugin: MyPlugin, onSelect: (path: string) => void) {
+		super(plugin.app);
+		this.plugin = plugin;
+		this.onSelect = onSelect;
+	}
+
+	getItems(): TFile[] {
+		return this.plugin.app.vault
+			.getFiles()
+			.filter((file) =>
+				file.extension
+					.toLowerCase()
+					.match(/^(png|jpg|jpeg|gif|webp|svg)$/),
+			);
+	}
+
+	getItemText(file: TFile): string {
+		return file.path;
+	}
+
+	onChooseItem(file: TFile, _evt: MouseEvent | KeyboardEvent): void {
+		this.onSelect(file.path);
+	}
+}
+
 export interface BlogPluginSettings {
 	sourceDirectory: string;
 	tempDirectoryName: string; // 临时目录名称(默认为 .hexo-temp)
@@ -73,6 +104,8 @@ export interface BlogPluginSettings {
 	siteLanguage: string; // 网站语言
 	siteTimezone: string; // 时区
 	siteUrl: string; // 网站 URL
+	// 图片配置
+	bannerImg: string; // 首屏背景图片
 }
 
 export const DEFAULT_SETTINGS: BlogPluginSettings = {
@@ -96,6 +129,8 @@ export const DEFAULT_SETTINGS: BlogPluginSettings = {
 	siteLanguage: "zh-CN",
 	siteTimezone: "Asia/Shanghai",
 	siteUrl: "https://yhao521.github.io",
+	// 图片配置默认值
+	bannerImg: "/img/bg.png",
 };
 
 export class BlogSettingTab extends PluginSettingTab {
@@ -237,6 +272,8 @@ export class BlogSettingTab extends PluginSettingTab {
 													.siteTimezone,
 											siteUrl:
 												this.plugin.settings.siteUrl,
+											bannerImg:
+												this.plugin.settings.bannerImg,
 										},
 									);
 									// 创建成功后自动设置为模板目录
@@ -398,10 +435,54 @@ export class BlogSettingTab extends PluginSettingTab {
 						this.plugin.settings.siteAvatar = value;
 						void this.plugin.saveSettings();
 					}),
+			)
+			.addButton((button: ButtonComponent) =>
+				button.setButtonText("选择").onClick(() => {
+					new ImageSuggestModal(this.plugin, (path: string) => {
+						this.plugin.settings.siteAvatar = path;
+						const avatarInput =
+							avatarSetting.controlEl.querySelector("input");
+						if (avatarInput) {
+							avatarInput.value = path;
+						}
+						void this.plugin.saveSettings();
+					}).open();
+				}),
 			);
 		const avatarInput = avatarSetting.controlEl.querySelector("input");
 		if (avatarInput) {
 			(avatarInput as HTMLElement).className +=
+				" blog-plugin-input-medium";
+		}
+
+		const bannerSetting = new Setting(containerEl)
+			.setName("首屏背景图片")
+			.setDesc("Hexo 博客首页首屏背景图片路径。")
+			.addText((text: TextComponent) =>
+				text
+					.setPlaceholder("/img/bg.png")
+					.setValue(this.plugin.settings.bannerImg)
+					.onChange((value: string) => {
+						this.plugin.settings.bannerImg = value;
+						void this.plugin.saveSettings();
+					}),
+			)
+			.addButton((button: ButtonComponent) =>
+				button.setButtonText("选择").onClick(() => {
+					new ImageSuggestModal(this.plugin, (path: string) => {
+						this.plugin.settings.bannerImg = path;
+						const bannerInput =
+							bannerSetting.controlEl.querySelector("input");
+						if (bannerInput) {
+							bannerInput.value = path;
+						}
+						void this.plugin.saveSettings();
+					}).open();
+				}),
+			);
+		const bannerInput = bannerSetting.controlEl.querySelector("input");
+		if (bannerInput) {
+			(bannerInput as HTMLElement).className +=
 				" blog-plugin-input-medium";
 		}
 

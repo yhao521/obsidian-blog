@@ -36,6 +36,7 @@ export async function createHexoTemplate(
 		siteLanguage?: string;
 		siteTimezone?: string;
 		siteUrl?: string;
+		bannerImg?: string;
 	},
 ): Promise<void> {
 	try {
@@ -105,9 +106,11 @@ export async function createHexoTemplate(
 		const siteDescription = hexoConfig?.siteDescription || "";
 		const siteKeywords = hexoConfig?.siteKeywords || "";
 		const siteAuthor = hexoConfig?.siteAuthor || "Your Name";
+		const siteAvatar = hexoConfig?.siteAvatar || "/img/avatar.png";
 		const siteLanguage = hexoConfig?.siteLanguage || "zh-CN";
 		const siteTimezone = hexoConfig?.siteTimezone || "";
 		const siteUrl = hexoConfig?.siteUrl || "https://your-domain.com";
+		const bannerImg = hexoConfig?.bannerImg || "/img/bg.png";
 
 		// 创建 _config.yml 配置文件
 		const configContent = `# Hexo Configuration
@@ -249,7 +252,9 @@ ${
 		const themeConfigContent = generateThemeConfig(theme, {
 			siteTitle,
 			siteAuthor,
+			siteAvatar,
 			siteUrl,
+			bannerImg,
 		});
 		if (themeConfigContent) {
 			const themeConfigPath = getThemeConfigPath(theme);
@@ -385,7 +390,9 @@ function generateThemeConfig(
 	options: {
 		siteTitle?: string;
 		siteAuthor?: string;
+		siteAvatar?: string;
 		siteUrl?: string;
+		bannerImg?: string;
 	},
 ): string | null {
 	switch (theme.toLowerCase()) {
@@ -406,12 +413,16 @@ function generateThemeConfig(
 function generateFluidConfig(options: {
 	siteTitle?: string;
 	siteAuthor?: string;
+	siteAvatar?: string;
 	siteUrl?: string;
+	bannerImg?: string;
 }): string {
 	const {
 		siteTitle = "My Blog",
 		siteAuthor = "Author",
+		siteAvatar = "/img/avatar.png",
 		siteUrl = "https://example.com",
+		bannerImg = "/img/bg.png",
 	} = options;
 	return `#---------------------------
 # Hexo Theme Fluid
@@ -724,6 +735,14 @@ lazyload:
 # 图标库，包含了大量社交类图标，主题依赖的不包含在内，因此可自行修改，详见 https://hexo.fluid-dev.com/docs/icon/
 # Icon library, which includes many social icons, does not include those theme dependent, so your can modify link by yourself. See: https://hexo.fluid-dev.com/docs/en/icon/
 iconfont: //at.alicdn.com/t/font_1736178_lbnruvf0jn.css
+
+# 作者头像
+# Author avatar
+avatar: "${siteAvatar}"
+
+# 首屏背景图片
+# Banner background image
+banner_img: "${bannerImg}"
 
 #---------------------------
 # 页头

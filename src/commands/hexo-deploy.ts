@@ -1,4 +1,4 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, FileSystemAdapter } from "obsidian";
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
@@ -113,7 +113,14 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 2. 在 Vault 内创建隐藏临时目录
-	const vaultPath = plugin.app.vault.getRoot().path;
+	// 获取 Vault 的绝对文件系统路径
+	const adapter = plugin.app.vault.adapter;
+	const vaultPath =
+		adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "";
+	if (!vaultPath) {
+		new Notice("无法获取 Vault 路径");
+		return;
+	}
 	const tempDirName = settings.tempDirectoryName || ".hexo-temp";
 	const tempDir = path.join(vaultPath, tempDirName);
 
@@ -129,7 +136,12 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 	// 3. 如果配置了模板目录,先复制模板
 	if (settings.templateDirectory) {
-		const templateDir = settings.templateDirectory;
+		// 解析模板目录为绝对路径
+		let templateDir = settings.templateDirectory;
+		if (!path.isAbsolute(templateDir)) {
+			templateDir = path.join(vaultPath, templateDir);
+		}
+
 		if (!fs.existsSync(templateDir)) {
 			new Notice("模板目录不存在,请检查配置");
 			return;
@@ -172,8 +184,11 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 5. 确定源目录
-	const sourceDir =
-		settings.sourceDirectory || plugin.app.vault.getRoot().path;
+	let sourceDir = settings.sourceDirectory || vaultPath;
+	// 如果源目录是相对路径,解析为绝对路径
+	if (sourceDir && !path.isAbsolute(sourceDir)) {
+		sourceDir = path.join(vaultPath, sourceDir);
+	}
 
 	// 6. 检查源目录和临时目录是否相同
 	if (path.resolve(sourceDir) === path.resolve(tempDir)) {
@@ -186,7 +201,19 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		new Notice("正在复制博客文章...");
 		const postsDir = path.join(tempDir, "source", "_posts");
 		console.log("Copying posts to:", postsDir);
-		copyMarkdownFiles(sourceDir, postsDir);
+
+		// 如果源目录是仓库根目录,排除临时目录和模板目录
+		const vaultRootPath =
+			adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "";
+		const excludeDirs = [".obsidian", ".git", "node_modules"];
+		if (path.resolve(sourceDir) === path.resolve(vaultRootPath)) {
+			excludeDirs.push(tempDirName);
+			if (settings.templateDirectory) {
+				excludeDirs.push(path.basename(settings.templateDirectory));
+			}
+		}
+
+		copyMarkdownFiles(sourceDir, postsDir, excludeDirs);
 		new Notice("文章复制完成");
 	} catch (error) {
 		const errorMessage =
