@@ -409,6 +409,35 @@ This is a Hexo blog template created by Obsidian Blog Plugin.
 			"utf-8",
 		);
 
+		// 如果使用的是 Fluid 主题，尝试使用外部配置文件
+		if (theme.toLowerCase() === "fluid") {
+			const externalConfigPath = path.join(
+				app.vault.configDir,
+				"plugins",
+				"obsidian-blog",
+				"assets",
+				"_config.fluid.template.yml",
+			);
+			if (fs.existsSync(externalConfigPath)) {
+				let configContent = fs.readFileSync(
+					externalConfigPath,
+					"utf-8",
+				);
+				// 替换关键变量
+				configContent = configContent
+					.replace(/blog_title: .*/g, `blog_title: "${siteTitle}"`)
+					.replace(
+						/about:\s*[\s\S]*?icons:/m,
+						`about:\n  banner_img: ${bannerImg}\n  banner_img_height: 60\n  banner_mask_alpha: 0.3\n  avatar: ${siteAvatar}\n  name: "${siteTitle}"\n  intro: "${siteSubtitle}"\n  icons:`,
+					);
+				fs.writeFileSync(
+					path.join(absolutePath, "_config.fluid.yml"),
+					configContent,
+					"utf-8",
+				);
+			}
+		}
+
 		new Notice("Hexo 模板创建成功!");
 		console.error("Template created at:", absolutePath);
 	} catch (error) {
