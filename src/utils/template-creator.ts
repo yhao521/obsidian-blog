@@ -339,6 +339,10 @@ body {
 		);
 
 		// 创建关于页面
+		const aboutDir = path.join(absolutePath, "source", "about");
+		if (!fs.existsSync(aboutDir)) {
+			fs.mkdirSync(aboutDir, { recursive: true });
+		}
 		const aboutPageContent = `---
 title: 关于
 layout: about
@@ -346,7 +350,7 @@ date: ${new Date().toISOString().replace("T", " ").split(".")[0]}
 ---
 `;
 		fs.writeFileSync(
-			path.join(absolutePath, "source", "about", "index.md"),
+			path.join(aboutDir, "index.md"),
 			aboutPageContent,
 			"utf-8",
 		);
