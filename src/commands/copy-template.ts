@@ -91,6 +91,32 @@ export async function copyTemplateToTemp(plugin: BlogPlugin): Promise<void> {
 			"images",
 		]);
 
+		// 如果配置了图片资源目录，复制图片到临时目录的 images 文件夹
+		if (settings.imageResourceDir) {
+			let imageResourcePath = settings.imageResourceDir;
+			if (!path.isAbsolute(imageResourcePath)) {
+				imageResourcePath = path.join(vaultPath, imageResourcePath);
+			}
+
+			if (fs.existsSync(imageResourcePath)) {
+				const targetImageDir = path.join(tempDir, "source", "images");
+				if (!fs.existsSync(targetImageDir)) {
+					fs.mkdirSync(targetImageDir, { recursive: true });
+				}
+				new Notice("正在复制图片资源...");
+				copyDirectory(imageResourcePath, targetImageDir, [
+					app.vault.configDir,
+					".git",
+				]);
+				console.warn("Images copied from:", imageResourcePath);
+			} else {
+				console.warn(
+					"Image resource directory not found:",
+					imageResourcePath,
+				);
+			}
+		}
+
 		// 如果是 Fluid 主题，处理配置文件变量替换
 		const fluidTemplatePath = path.join(
 			app.vault.configDir,

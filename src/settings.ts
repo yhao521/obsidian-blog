@@ -16,12 +16,15 @@ import { createHexoTemplate } from "./utils/template-creator";
 // 文件夹选择器 - 使用 Obsidian 原生的模糊搜索选择器
 class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	plugin: MyPlugin;
-	settingKey: "sourceDirectory" | "templateDirectory";
+	settingKey: "sourceDirectory" | "templateDirectory" | "imageResourceDir";
 	onSelect: (path: string) => void;
 
 	constructor(
 		plugin: MyPlugin,
-		settingKey: "sourceDirectory" | "templateDirectory",
+		settingKey:
+			| "sourceDirectory"
+			| "templateDirectory"
+			| "imageResourceDir",
 		onSelect: (path: string) => void,
 	) {
 		super(plugin.app);
@@ -89,6 +92,7 @@ export interface BlogPluginSettings {
 	tempDirectoryName: string; // 临时目录名称(默认为 .hexo-temp)
 	hexoPath: string;
 	templateDirectory: string;
+	imageResourceDir: string; // 图片资源目录路径
 	// Hexo 配置
 	hexoTheme: string; // Hexo 主题名称
 	deployType: string; // 部署类型（git 等）
@@ -113,6 +117,7 @@ export const DEFAULT_SETTINGS: BlogPluginSettings = {
 	tempDirectoryName: ".hexo-temp",
 	hexoPath: "hexo",
 	templateDirectory: "",
+	imageResourceDir: "",
 	// Hexo 配置默认值
 	hexoTheme: "fluid",
 	deployType: "git",
@@ -294,6 +299,35 @@ export class BlogSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		// 图片资源目录配置
+		new Setting(containerEl)
+			.setName("图片资源目录")
+			.setDesc(
+				"包含博客图片资源的目录（头像、背景图等）。部署时将复制到 source/images。",
+			)
+			.addButton((button: ButtonComponent) => {
+				button.setButtonText("选择").onClick(async () => {
+					new FolderSuggestModal(
+						this.plugin,
+						"imageResourceDir",
+						(path: string) => {
+							this.plugin.settings.imageResourceDir = path;
+							void this.plugin.saveSettings();
+							this.display(); // 刷新设置界面
+						},
+					).open();
+				});
+			})
+			.addText((text: TextComponent) =>
+				text
+					.setPlaceholder("/path/to/images 或从仓库中选择")
+					.setValue(this.plugin.settings.imageResourceDir)
+					.onChange(async (value: string) => {
+						this.plugin.settings.imageResourceDir = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
 		// 添加分隔线
 		containerEl.createEl("hr", { attr: { style: "margin: 20px 0;" } });
 
@@ -421,7 +455,9 @@ export class BlogSettingTab extends PluginSettingTab {
 
 		const avatarSetting = new Setting(containerEl)
 			.setName("作者头像")
-			.setDesc("Hexo 博客的作者头像图片路径。")
+			.setDesc(
+				"Hexo 博客的作者头像图片路径。可直接输入文件名（如 avatar.png），将自动使用 /images/ 目录。",
+			)
 			.addText((text: TextComponent) =>
 				text
 					.setPlaceholder("/img/avatar.png")
@@ -452,7 +488,9 @@ export class BlogSettingTab extends PluginSettingTab {
 
 		const bannerSetting = new Setting(containerEl)
 			.setName("首屏背景图片")
-			.setDesc("Hexo 博客首页首屏背景图片路径。")
+			.setDesc(
+				"Hexo 博客首页首屏背景图片路径。可直接输入文件名（如 bg.png），将自动使用 /images/ 目录。",
+			)
 			.addText((text: TextComponent) =>
 				text
 					.setPlaceholder("/img/bg.png")

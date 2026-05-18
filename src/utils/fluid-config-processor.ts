@@ -3,13 +3,24 @@ import * as path from "path";
 
 /**
  * 转换图片路径为 Hexo 相对路径
+ * @param imgPath 原始图片路径
+ * @returns Hexo 相对路径（以 / 开头）
  */
 function convertToHexoPath(imgPath: string): string {
 	if (!imgPath) return "/img/bg.png";
-	// 如果已经是相对路径（以 / 开头），直接返回
+
+	// 如果已经是绝对路径（以 / 开头），直接返回
 	if (imgPath.startsWith("/")) return imgPath;
+
 	// 移除模板目录前缀，如 "模板/source/images/bg.png" -> "/images/bg.png"
 	const normalized = imgPath.replace(/^.*?source\//, "/");
+
+	// 如果只是文件名（如 "avatar.png"），自动添加 /images/ 前缀
+	if (!normalized.includes("/") && !normalized.startsWith("/")) {
+		return `/images/${normalized}`;
+	}
+
+	// 确保以 / 开头
 	return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }
 
