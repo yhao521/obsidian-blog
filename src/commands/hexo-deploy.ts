@@ -229,9 +229,27 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			// 使用国内镜像加速 npm install
 			const installCmd = `npm install --registry=https://registry.npmmirror.com`;
 			console.log(`Executing: ${installCmd}`);
+
+			// 确保子进程能访问 npm/node：获取当前 PATH，补充常见路径
+			const currentPath = process.env.PATH || "";
+			const commonPaths = [
+				"/usr/local/bin",
+				"/opt/homebrew/bin",
+				"/usr/bin",
+				"/bin",
+			];
+			const extraPaths = commonPaths.filter(
+				(p) => !currentPath.includes(p),
+			);
+			const installEnv = {
+				...process.env,
+				PATH: [currentPath, ...extraPaths].filter(Boolean).join(":"),
+			};
+
 			try {
 				const installResult = await execAsync(installCmd, {
 					cwd: tempDir,
+					env: installEnv,
 				});
 				if (installResult.stdout)
 					console.log("Install output:", installResult.stdout);
