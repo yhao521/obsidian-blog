@@ -1,10 +1,4 @@
-import {
-	Notice,
-	FileSystemAdapter,
-	Plugin,
-	Modal,
-	ButtonComponent,
-} from "obsidian";
+import { Notice, FileSystemAdapter, Modal, ButtonComponent } from "obsidian";
 import * as fs from "fs";
 import * as path from "path";
 import BlogPlugin from "../main";

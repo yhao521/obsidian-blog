@@ -1,9 +1,10 @@
-import { Notice, Plugin, FileSystemAdapter } from "obsidian";
+import { Notice, FileSystemAdapter } from "obsidian";
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { generateTempDirectory } from "./copy-template";
+import BlogPlugin from "../main";
 
 const execAsync = promisify(exec);
 
@@ -17,38 +18,6 @@ function ensureDirectoryExists(dir: string): void {
 }
 
 /**
- * 递归复制目录内容
- * @param src 源目录
- * @param dest 目标目录
- * @param excludeDirs 需要排除的目录列表
- */
-function copyDirectory(
-	src: string,
-	dest: string,
-	excludeDirs: string[] = [".obsidian", ".git", "node_modules"],
-): void {
-	ensureDirectoryExists(dest);
-
-	const entries = fs.readdirSync(src, { withFileTypes: true });
-
-	for (const entry of entries) {
-		const srcPath = path.join(src, entry.name);
-		const destPath = path.join(dest, entry.name);
-
-		// 排除指定的目录
-		if (entry.isDirectory() && excludeDirs.includes(entry.name)) {
-			continue;
-		}
-
-		if (entry.isDirectory()) {
-			copyDirectory(srcPath, destPath, excludeDirs);
-		} else {
-			fs.copyFileSync(srcPath, destPath);
-		}
-	}
-}
-
-/**
  * 复制 Markdown 文件到指定目录
  * @param srcDir 源目录
  * @param destDir 目标目录
@@ -57,7 +26,7 @@ function copyDirectory(
 function copyMarkdownFiles(
 	srcDir: string,
 	destDir: string,
-	excludeDirs: string[] = [".obsidian", ".git", "node_modules"],
+	excludeDirs: string[] = [],
 ): void {
 	ensureDirectoryExists(destDir);
 
@@ -96,8 +65,8 @@ function validatePath(inputPath: string): boolean {
 /**
  * Hexo 博客部署主函数
  */
-export async function deployHexo(plugin: Plugin): Promise<void> {
-	const settings = (plugin as any).settings;
+export async function deployHexo(plugin: BlogPlugin): Promise<void> {
+	const { settings } = plugin;
 
 	// 1. 验证路径安全性
 	if (settings.sourceDirectory && !validatePath(settings.sourceDirectory)) {
@@ -168,7 +137,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		// 复用 generateTempDirectory 函数（只执行前两步：复制模板 + 同步文章）
 		// 注意：这里不需要构建，因为后面会单独执行 hexo generate 和 deploy
 		new Notice(`[2/7] 正在复制模板...`);
-		await generateTempDirectory(plugin as any);
+		await generateTempDirectory(plugin);
 		new Notice(`[2/7] 模板复制完成`);
 	}
 
@@ -205,7 +174,8 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		// 如果源目录是仓库根目录,排除临时目录和模板目录
 		const vaultRootPath =
 			adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "";
-		const excludeDirs = [".obsidian", ".git", "node_modules"];
+		const configDir = plugin.app.vault.configDir;
+		const excludeDirs = [configDir, ".git", "node_modules"];
 		if (path.resolve(sourceDir) === path.resolve(vaultRootPath)) {
 			excludeDirs.push(tempDirName);
 			if (settings.templateDirectory) {
