@@ -91,7 +91,7 @@ class ImageSuggestModal extends FuzzySuggestModal<TFile> {
 
 export interface BlogPluginSettings {
 	sourceDirectory: string;
-	tempDirectoryName: string; // 临时目录名称(默认为 .hexo-temp)
+	tempDirectoryName: string; // 临时目录名称(默认为 hexo-temp)
 	hexoPath: string;
 	templateDirectory: string;
 	imageResourceDir: string; // 图片资源目录路径
@@ -116,9 +116,9 @@ export interface BlogPluginSettings {
 
 export const DEFAULT_SETTINGS: BlogPluginSettings = {
 	sourceDirectory: "",
-	tempDirectoryName: ".hexo-temp",
+	tempDirectoryName: "hexo-temp",
 	hexoPath: "hexo",
-	templateDirectory: ".template", // 默认使用隐藏目录
+	templateDirectory: "template", // 不隐藏目录
 	imageResourceDir: "",
 	// Hexo 配置默认值
 	hexoTheme: "fluid",
@@ -212,13 +212,13 @@ export class BlogSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("临时目录名称")
 			.setDesc(
-				"在插件目录中创建的隐藏临时目录名称（固定为 .hexo-temp，不可修改）。",
+				"在插件目录中创建的临时目录名称（固定为 hexo-temp，不可修改）。",
 			)
 			.addText((text: TextComponent) =>
 				text
 					.setDisabled(true)
-					.setValue(".hexo-temp") //（隐藏目录，自动生成）
-					.setPlaceholder(".hexo-temp"),
+					.setValue("hexo-temp")
+					.setPlaceholder("hexo-temp"),
 			);
 
 		new Setting(containerEl)
@@ -241,7 +241,7 @@ export class BlogSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("模板目录")
 			.setDesc(
-				"包含 hexo 模板的目录（主题、_config.yml 等）。默认使用隐藏目录 .template，不可修改。",
+				"包含 hexo 模板的目录（主题、_config.yml 等）。默认使用目录 template，不可修改。",
 			)
 			.addButton((button: ButtonComponent) => {
 				button.setButtonText("创建").onClick(async () => {
@@ -260,14 +260,14 @@ export class BlogSettingTab extends PluginSettingTab {
 						"obsidian-blog",
 					);
 
-					// 固定使用 .template 隐藏目录
-					const targetPath = path.join(pluginDir, ".template");
+					// 固定使用 template 目录（不隐藏）
+					const targetPath = path.join(pluginDir, "template");
 					await this.createTemplateInDirectory(targetPath, vaultPath);
 				});
 			})
 			.addText((text: TextComponent) => {
-				const configDir = this.plugin.app.vault.configDir;
-				const displayPath = `${configDir}/plugins/obsidian-blog/.template`;
+				// const configDir = this.plugin.app.vault.configDir;
+				const displayPath = `template`;
 				text.setDisabled(true)
 					.setValue(displayPath)
 					.setPlaceholder(displayPath);

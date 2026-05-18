@@ -33,7 +33,7 @@ export async function cleanTempDirectory(plugin: BlogPlugin): Promise<void> {
 			"plugins",
 			"obsidian-blog",
 		);
-		const tempDirName = settings.tempDirectoryName || ".hexo-temp";
+		const tempDirName = settings.tempDirectoryName || "hexo-temp";
 		const tempDir = path.join(pluginDir, tempDirName);
 
 		// 检查临时目录是否存在

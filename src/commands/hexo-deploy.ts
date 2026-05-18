@@ -129,7 +129,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		"plugins",
 		"obsidian-blog",
 	);
-	const tempDirName = settings.tempDirectoryName || ".hexo-temp";
+	const tempDirName = settings.tempDirectoryName || "hexo-temp";
 	const tempDir = path.join(pluginDir, tempDirName);
 
 	try {
@@ -296,13 +296,29 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 				? "npx hexo"
 				: `"${finalHexoCommand}"`;
 
+		// 确保子进程能访问 node：获取当前 PATH，如果不存在则尝试添加常见 node 路径
+		const currentPath = process.env.PATH || "";
+		const commonNodePaths = [
+			"/usr/local/bin",
+			"/opt/homebrew/bin",
+			"/usr/bin",
+			"/bin",
+		];
+		const extraPaths = commonNodePaths.filter(
+			(p) => !currentPath.includes(p),
+		);
+		const env = {
+			...process.env,
+			PATH: [currentPath, ...extraPaths].filter(Boolean).join(":"),
+		};
+
 		// 执行 hexo generate（生成静态文件）
 		new Notice("正在生成静态文件...");
 		const generateCmd = `${hexoCmd} generate`;
 		console.log(`Executing: ${generateCmd}`);
 		const generateResult = await execAsync(generateCmd, {
 			cwd: tempDir,
-			env: { ...process.env },
+			env: env,
 		});
 		if (generateResult.stdout)
 			console.log("Generate output:", generateResult.stdout);
@@ -315,7 +331,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
-			env: { ...process.env },
+			env: env,
 		});
 		if (cleanResult.stdout)
 			console.log("Clean output:", cleanResult.stdout);
@@ -328,7 +344,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
-			env: { ...process.env },
+			env: env,
 		});
 
 		new Notice("Hexo 部署成功!");

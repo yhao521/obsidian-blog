@@ -111,7 +111,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			"plugins",
 			"obsidian-blog",
 		);
-		const tempDirName = settings.tempDirectoryName || ".hexo-temp";
+		const tempDirName = settings.tempDirectoryName || "hexo-temp";
 		const tempDir = path.join(pluginDir, tempDirName);
 
 		// 确保临时目录存在
