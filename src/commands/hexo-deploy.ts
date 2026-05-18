@@ -216,61 +216,14 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 8. 执行 Hexo 命令
-	// 优先使用临时目录中的本地 hexo，否则尝试全局 hexo
-	let finalHexoCommand = settings.hexoPath;
-	if (!finalHexoCommand) {
-		// 1. 检查临时目录中是否有本地 hexo
-		const localHexoPath = path.join(
-			tempDir,
-			"node_modules",
-			".bin",
-			"hexo",
-		);
-		if (fs.existsSync(localHexoPath)) {
-			finalHexoCommand = localHexoPath;
-			console.warn("Using local hexo:", finalHexoCommand);
-		} else {
-			// 2. 尝试全局 hexo
-			const commonPaths = [
-				"/usr/local/bin/hexo",
-				"/opt/homebrew/bin/hexo",
-				"/usr/bin/hexo",
-			];
-			for (const hexoPath of commonPaths) {
-				try {
-					await execAsync(`"${hexoPath}" --version`, {
-						cwd: tempDir,
-						// 移除 env，使用默认环境
-					});
-					finalHexoCommand = hexoPath;
-					console.warn("Using global hexo:", finalHexoCommand);
-					break;
-				} catch (_error) {
-					// 继续尝试下一个路径
-				}
-			}
-
-			// 3. 如果都没找到，尝试 npx
-			if (!finalHexoCommand) {
-				finalHexoCommand = "npx hexo";
-				console.warn("Using npx hexo as fallback");
-			}
-		}
-	}
-
 	try {
-		// 使用 zsh 登录 shell 执行，确保加载 .zshrc 中的环境变量
-		const execWithZsh = (cmd: string) => `/bin/zsh -l -c '${cmd}'`;
-
 		// 8.1 安装 Hexo 依赖（如果 package.json 存在且 node_modules 不存在）
 		const packageJsonPath = path.join(tempDir, "package.json");
 		const nodeModulesPath = path.join(tempDir, "node_modules");
 		if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
 			new Notice("正在安装 Hexo 依赖...");
 			// 使用国内镜像加速 npm install
-			const installCmd = execWithZsh(
-				"npm install --registry=https://registry.npmmirror.com",
-			);
+			const installCmd = `npm install --registry=https://registry.npmmirror.com`;
 			console.log(`Executing: ${installCmd}`);
 			try {
 				const installResult = await execAsync(installCmd, {
@@ -289,9 +242,62 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			}
 		}
 
+		// 8.2 确定要使用的 Hexo 命令（在 npm install 之后检测）
+		let finalHexoCommand = settings.hexoPath;
+		if (!finalHexoCommand) {
+			// 1. 检查临时目录中是否有本地 hexo（npm install 后应该存在）
+			const localHexoPath = path.join(
+				tempDir,
+				"node_modules",
+				".bin",
+				"hexo",
+			);
+			if (fs.existsSync(localHexoPath)) {
+				finalHexoCommand = localHexoPath;
+				console.warn("Using local hexo:", finalHexoCommand);
+			} else {
+				// 2. 尝试全局 hexo
+				const commonPaths = [
+					"/usr/local/bin/hexo",
+					"/opt/homebrew/bin/hexo",
+					"/usr/bin/hexo",
+				];
+				for (const hexoPath of commonPaths) {
+					try {
+						await execAsync(`"${hexoPath}" --version`, {
+							cwd: tempDir,
+						});
+						finalHexoCommand = hexoPath;
+						console.warn("Using global hexo:", finalHexoCommand);
+						break;
+					} catch (_error) {
+						// 继续尝试下一个路径
+					}
+				}
+
+				// 3. 如果都没找到，尝试 npx
+				if (!finalHexoCommand) {
+					finalHexoCommand = "npx hexo";
+					console.warn("Using npx hexo as fallback");
+				}
+			}
+		}
+
+		// 执行 hexo generate（生成静态文件）
+		new Notice("正在生成静态文件...");
+		const generateCmd = `${finalHexoCommand} generate`;
+		console.log(`Executing: ${generateCmd}`);
+		const generateResult = await execAsync(generateCmd, {
+			cwd: tempDir,
+		});
+		if (generateResult.stdout)
+			console.log("Generate output:", generateResult.stdout);
+		if (generateResult.stderr)
+			console.warn("Generate warnings:", generateResult.stderr);
+
 		// 执行 hexo clean
 		new Notice("正在清理 Hexo...");
-		const cleanCmd = execWithZsh(`${finalHexoCommand} clean`);
+		const cleanCmd = `${finalHexoCommand} clean`;
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
@@ -303,7 +309,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 		// 执行 hexo deploy
 		new Notice("正在部署 Hexo...");
-		const deployCmd = execWithZsh(`${finalHexoCommand} deploy`);
+		const deployCmd = `${finalHexoCommand} deploy`;
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
