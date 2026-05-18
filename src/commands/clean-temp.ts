@@ -26,9 +26,15 @@ export async function cleanTempDirectory(plugin: BlogPlugin): Promise<void> {
 			return;
 		}
 
-		// 构建临时目录路径
+		// 构建临时目录路径（在插件目录下）
+		const pluginDir = path.join(
+			vaultPath,
+			app.vault.configDir,
+			"plugins",
+			"obsidian-blog",
+		);
 		const tempDirName = settings.tempDirectoryName || ".hexo-temp";
-		const tempDir = path.join(vaultPath, tempDirName);
+		const tempDir = path.join(pluginDir, tempDirName);
 
 		// 检查临时目录是否存在
 		if (!fs.existsSync(tempDir)) {

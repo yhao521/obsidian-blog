@@ -113,7 +113,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		return;
 	}
 
-	// 2. 在 Vault 内创建隐藏临时目录
+	// 2. 在插件目录下创建隐藏临时目录
 	// 获取 Vault 的绝对文件系统路径
 	const adapter = plugin.app.vault.adapter;
 	const vaultPath =
@@ -122,8 +122,15 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		new Notice("无法获取 Vault 路径");
 		return;
 	}
+	// 构建插件目录路径：Vault/.obsidian/plugins/obsidian-blog/
+	const pluginDir = path.join(
+		vaultPath,
+		plugin.app.vault.configDir,
+		"plugins",
+		"obsidian-blog",
+	);
 	const tempDirName = settings.tempDirectoryName || ".hexo-temp";
-	const tempDir = path.join(vaultPath, tempDirName);
+	const tempDir = path.join(pluginDir, tempDirName);
 
 	try {
 		// 确保临时目录存在
@@ -137,11 +144,8 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 	// 3. 如果配置了模板目录,先复制模板
 	if (settings.templateDirectory) {
-		// 解析模板目录为绝对路径
-		let templateDir = settings.templateDirectory;
-		if (!path.isAbsolute(templateDir)) {
-			templateDir = path.join(vaultPath, templateDir);
-		}
+		// 模板目录现在在插件目录下，直接使用绝对路径
+		const templateDir = settings.templateDirectory;
 
 		if (!fs.existsSync(templateDir)) {
 			new Notice("模板目录不存在,请检查配置");
@@ -298,6 +302,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${generateCmd}`);
 		const generateResult = await execAsync(generateCmd, {
 			cwd: tempDir,
+			env: { ...process.env },
 		});
 		if (generateResult.stdout)
 			console.log("Generate output:", generateResult.stdout);
@@ -310,6 +315,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
+			env: { ...process.env },
 		});
 		if (cleanResult.stdout)
 			console.log("Clean output:", cleanResult.stdout);
@@ -322,6 +328,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
+			env: { ...process.env },
 		});
 
 		new Notice("Hexo 部署成功!");

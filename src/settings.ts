@@ -9,7 +9,9 @@ import {
 	TFile,
 	FileSystemAdapter,
 	DropdownComponent,
+	Vault,
 } from "obsidian";
+import * as path from "path";
 import MyPlugin from "./main";
 import { createHexoTemplate } from "./utils/template-creator";
 
@@ -210,7 +212,7 @@ export class BlogSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("临时目录名称")
 			.setDesc(
-				"在当前仓库中创建的隐藏临时目录名称（固定为 .hexo-temp，不可修改）。",
+				"在插件目录中创建的隐藏临时目录名称（固定为 .hexo-temp，不可修改）。",
 			)
 			.addText((text: TextComponent) =>
 				text
@@ -243,24 +245,33 @@ export class BlogSettingTab extends PluginSettingTab {
 			)
 			.addButton((button: ButtonComponent) => {
 				button.setButtonText("创建").onClick(async () => {
-					// 获取 Vault 的绝对文件系统路径
+					// 获取插件目录的绝对路径
 					const adapter = this.plugin.app.vault.adapter;
 					const vaultPath =
 						adapter instanceof FileSystemAdapter
 							? adapter.getBasePath()
 							: "";
 
+					// 获取插件目录路径（在 Vault/.obsidian/plugins/obsidian-blog/ 下）
+					const pluginDir = path.join(
+						vaultPath,
+						this.plugin.app.vault.configDir,
+						"plugins",
+						"obsidian-blog",
+					);
+
 					// 固定使用 .template 隐藏目录
-					const targetPath = ".template";
+					const targetPath = path.join(pluginDir, ".template");
 					await this.createTemplateInDirectory(targetPath, vaultPath);
 				});
 			})
-			.addText((text: TextComponent) =>
-				text
-					.setDisabled(true)
-					.setValue(".template") // （隐藏目录，自动生成）
-					.setPlaceholder(".template"),
-			);
+			.addText((text: TextComponent) => {
+				const configDir = this.plugin.app.vault.configDir;
+				const displayPath = `${configDir}/plugins/obsidian-blog/.template`;
+				text.setDisabled(true)
+					.setValue(displayPath)
+					.setPlaceholder(displayPath);
+			});
 
 		// 图片资源目录配置
 		new Setting(containerEl)

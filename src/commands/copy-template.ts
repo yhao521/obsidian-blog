@@ -96,19 +96,23 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 		}
 
 		// 解析模板目录绝对路径
-		let templateDir = settings.templateDirectory;
-		if (!path.isAbsolute(templateDir)) {
-			templateDir = path.join(vaultPath, templateDir);
-		}
+		// 模板目录现在存储在插件目录下，直接使用绝对路径
+		const templateDir = settings.templateDirectory;
 
 		if (!fs.existsSync(templateDir)) {
 			new Notice("模板目录不存在,请检查配置");
 			return;
 		}
 
-		// 构建临时目录路径
+		// 构建临时目录路径（在插件目录下）
+		const pluginDir = path.join(
+			vaultPath,
+			app.vault.configDir,
+			"plugins",
+			"obsidian-blog",
+		);
 		const tempDirName = settings.tempDirectoryName || ".hexo-temp";
-		const tempDir = path.join(vaultPath, tempDirName);
+		const tempDir = path.join(pluginDir, tempDirName);
 
 		// 确保临时目录存在
 		if (!fs.existsSync(tempDir)) {
