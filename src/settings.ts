@@ -116,7 +116,7 @@ export const DEFAULT_SETTINGS: BlogPluginSettings = {
 	sourceDirectory: "",
 	tempDirectoryName: ".hexo-temp",
 	hexoPath: "hexo",
-	templateDirectory: "",
+	templateDirectory: ".template", // 默认使用隐藏目录
 	imageResourceDir: "",
 	// Hexo 配置默认值
 	hexoTheme: "fluid",
@@ -209,16 +209,14 @@ export class BlogSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("临时目录名称")
-			.setDesc("在当前仓库中创建的隐藏临时目录名称（默认：.hexo-temp）。")
+			.setDesc(
+				"在当前仓库中创建的隐藏临时目录名称（固定为 .hexo-temp，不可修改）。",
+			)
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder(".hexo-temp")
-					.setValue(this.plugin.settings.tempDirectoryName)
-					.onChange(async (value: string) => {
-						this.plugin.settings.tempDirectoryName =
-							value || ".hexo-temp";
-						await this.plugin.saveSettings();
-					}),
+					.setDisabled(true)
+					.setValue(".hexo-temp") //（隐藏目录，自动生成）
+					.setPlaceholder(".hexo-temp"),
 			);
 
 		new Setting(containerEl)
@@ -237,24 +235,12 @@ export class BlogSettingTab extends PluginSettingTab {
 		// 添加分隔线
 		containerEl.createEl("hr", { attr: { style: "margin: 20px 0;" } });
 
+		// 模板目录配置（固定使用隐藏目录，不允许选择）
 		new Setting(containerEl)
 			.setName("模板目录")
 			.setDesc(
-				"包含 hexo 模板的目录（主题、_config.yml 等）。部署前将复制到此目录。",
+				"包含 hexo 模板的目录（主题、_config.yml 等）。默认使用隐藏目录 .template，不可修改。",
 			)
-			.addButton((button: ButtonComponent) => {
-				button.setButtonText("选择").onClick(async () => {
-					new FolderSuggestModal(
-						this.plugin,
-						"templateDirectory",
-						(path: string) => {
-							this.plugin.settings.templateDirectory = path;
-							void this.plugin.saveSettings();
-							this.display(); // 刷新设置界面
-						},
-					).open();
-				});
-			})
 			.addButton((button: ButtonComponent) => {
 				button.setButtonText("创建").onClick(async () => {
 					// 获取 Vault 的绝对文件系统路径
@@ -264,39 +250,16 @@ export class BlogSettingTab extends PluginSettingTab {
 							? adapter.getBasePath()
 							: "";
 
-					// 如果模板目录已有值,直接在当前路径创建
-					let targetPath = this.plugin.settings.templateDirectory;
-					if (!targetPath) {
-						// 如果为空,打开文件夹选择器
-						new FolderSuggestModal(
-							this.plugin,
-							"templateDirectory",
-							(path: string) => {
-								void (async () => {
-									await this.createTemplateInDirectory(
-										path,
-										vaultPath,
-									);
-								})();
-							},
-						).open();
-					} else {
-						// 有值则直接创建
-						await this.createTemplateInDirectory(
-							targetPath,
-							vaultPath,
-						);
-					}
+					// 固定使用 .template 隐藏目录
+					const targetPath = ".template";
+					await this.createTemplateInDirectory(targetPath, vaultPath);
 				});
 			})
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("/path/to/hexo-template 或从仓库中选择")
-					.setValue(this.plugin.settings.templateDirectory)
-					.onChange(async (value: string) => {
-						this.plugin.settings.templateDirectory = value;
-						await this.plugin.saveSettings();
-					}),
+					.setDisabled(true)
+					.setValue(".template") // （隐藏目录，自动生成）
+					.setPlaceholder(".template"),
 			);
 
 		// 图片资源目录配置
