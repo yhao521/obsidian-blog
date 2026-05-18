@@ -274,7 +274,10 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		const nodeModulesPath = path.join(tempDir, "node_modules");
 		if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
 			new Notice("正在安装 Hexo 依赖...");
-			const installCmd = execWithZsh("npm install");
+			// 使用国内镜像加速 npm install
+			const installCmd = execWithZsh(
+				"npm install --registry=https://registry.npmmirror.com",
+			);
 			console.log(`Executing: ${installCmd}`);
 			try {
 				const installResult = await execAsync(installCmd, {
