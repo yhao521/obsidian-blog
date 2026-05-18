@@ -1,8 +1,12 @@
 import { Notice, FileSystemAdapter } from "obsidian";
+import { exec } from "child_process";
+import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import BlogPlugin from "../main";
 import { processFluidConfig } from "../utils/fluid-config-processor";
+
+const execAsync = promisify(exec);
 
 /**
  * 递归复制目录,跳过指定的文件和文件夹
@@ -38,9 +42,44 @@ function copyDirectory(
 }
 
 /**
- * 复制模板目录内容到临时目录
+ * 复制 Markdown 文件到指定目录
  */
-export async function copyTemplateToTemp(plugin: BlogPlugin): Promise<void> {
+function copyMarkdownFiles(
+	srcDir: string,
+	destDir: string,
+	excludeDirs: string[] = [],
+): void {
+	if (!fs.existsSync(srcDir)) {
+		return;
+	}
+
+	if (!fs.existsSync(destDir)) {
+		fs.mkdirSync(destDir, { recursive: true });
+	}
+
+	const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const srcPath = path.join(srcDir, entry.name);
+		const destPath = path.join(destDir, entry.name);
+
+		// 排除指定的目录
+		if (entry.isDirectory() && excludeDirs.includes(entry.name)) {
+			continue;
+		}
+
+		if (entry.isDirectory()) {
+			copyMarkdownFiles(srcPath, destPath, excludeDirs);
+		} else if (entry.name.endsWith(".md")) {
+			fs.copyFileSync(srcPath, destPath);
+		}
+	}
+}
+
+/**
+ * 生成临时目录：复制模板 → 同步文章 → 构建
+ */
+export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 	const { settings, app } = plugin;
 
 	try {
@@ -80,8 +119,8 @@ export async function copyTemplateToTemp(plugin: BlogPlugin): Promise<void> {
 			fs.mkdirSync(tempDir, { recursive: true });
 		}
 
-		// 复制模板目录内容到临时目录
-		new Notice("正在复制模板文件到临时目录...");
+		// 步骤 1: 复制模板目录内容到临时目录
+		new Notice("步骤 1/3: 正在复制模板文件...");
 		console.warn("Copying template from:", templateDir, "to:", tempDir);
 
 		copyDirectory(templateDir, tempDir, [
@@ -103,7 +142,6 @@ export async function copyTemplateToTemp(plugin: BlogPlugin): Promise<void> {
 				if (!fs.existsSync(targetImageDir)) {
 					fs.mkdirSync(targetImageDir, { recursive: true });
 				}
-				new Notice("正在复制图片资源...");
 				copyDirectory(imageResourcePath, targetImageDir, [
 					app.vault.configDir,
 					".git",
@@ -136,12 +174,45 @@ export async function copyTemplateToTemp(plugin: BlogPlugin): Promise<void> {
 			console.warn("Fluid config processed with variables");
 		}
 
-		new Notice("模板已复制到临时目录");
-		console.error("Template copied to:", tempDir);
+		new Notice("步骤 1/3: 模板复制完成");
+
+		// 步骤 2: 同步文章
+		new Notice("步骤 2/3: 正在同步文章...");
+		let sourceDir = settings.sourceDirectory || vaultPath;
+		if (sourceDir && !path.isAbsolute(sourceDir)) {
+			sourceDir = path.join(vaultPath, sourceDir);
+		}
+
+		const postsDestDir = path.join(tempDir, "source", "_posts");
+		if (!fs.existsSync(postsDestDir)) {
+			fs.mkdirSync(postsDestDir, { recursive: true });
+		}
+
+		// 排除临时目录，避免无限递归
+		copyMarkdownFiles(sourceDir, postsDestDir, [
+			app.vault.configDir,
+			".git",
+			"node_modules",
+			tempDirName, // 排除临时目录
+		]);
+
+		new Notice("步骤 2/3: 文章同步完成");
+
+		// 步骤 3: 构建 Hexo
+		new Notice("步骤 3/3: 正在构建...");
+		console.warn("Running hexo generate in:", tempDir);
+
+		await execAsync("npx hexo generate", {
+			cwd: tempDir,
+		});
+
+		new Notice("步骤 3/3: 构建完成");
+		new Notice("临时目录生成成功");
+		console.error("Temp directory generated:", tempDir);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		new Notice(`复制模板失败: ${errorMessage}`);
-		console.error("Copy template error:", error);
+		new Notice(`生成临时目录失败: ${errorMessage}`);
+		console.error("Generate temp directory error:", error);
 	}
 }

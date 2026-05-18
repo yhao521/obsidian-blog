@@ -5,7 +5,8 @@ import {
 	BlogSettingTab,
 } from "./settings";
 import { deployHexo } from "./commands/hexo-deploy";
-import { copyTemplateToTemp } from "./commands/copy-template";
+import { generateTempDirectory } from "./commands/copy-template";
+import { cleanTempDirectory } from "./commands/clean-temp";
 
 export default class BlogPlugin extends Plugin {
 	settings: BlogPluginSettings;
@@ -25,11 +26,18 @@ export default class BlogPlugin extends Plugin {
 			callback: () => deployHexo(this),
 		});
 
-		// 注册复制模板命令
+		// 注册生成临时目录命令
 		this.addCommand({
-			id: "copy-template-to-temp",
-			name: "复制模板到临时目录",
-			callback: () => copyTemplateToTemp(this),
+			id: "generate-temp-directory",
+			name: "生成临时目录",
+			callback: () => generateTempDirectory(this),
+		});
+
+		// 注册清理临时目录命令
+		this.addCommand({
+			id: "clean-temp-directory",
+			name: "清理临时目录",
+			callback: () => cleanTempDirectory(this),
 		});
 
 		// 添加设置面板

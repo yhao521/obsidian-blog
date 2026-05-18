@@ -3,7 +3,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { copyTemplateToTemp } from "./copy-template";
+import { generateTempDirectory } from "./copy-template";
 
 const execAsync = promisify(exec);
 
@@ -159,8 +159,9 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			}
 		}
 
-		// 复用 copyTemplateToTemp 函数
-		await copyTemplateToTemp(plugin as any);
+		// 复用 generateTempDirectory 函数（只执行前两步：复制模板 + 同步文章）
+		// 注意：这里不需要构建，因为后面会单独执行 hexo generate 和 deploy
+		await generateTempDirectory(plugin as any);
 	}
 
 	// 4. 检查临时目录是否包含 Hexo 项目
