@@ -132,13 +132,15 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	const tempDirName = settings.tempDirectoryName || "hexo-temp";
 	const tempDir = path.join(pluginDir, tempDirName);
 
+	new Notice(`[1/7] 准备临时目录...`);
 	try {
 		// 确保临时目录存在
 		ensureDirectoryExists(tempDir);
+		new Notice(`[1/7] 临时目录准备完成`);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		new Notice(`无法创建临时目录: ${errorMessage}`);
+		new Notice(`[1/7] 错误: 无法创建临时目录 - ${errorMessage}`);
 		return;
 	}
 
@@ -165,7 +167,9 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 		// 复用 generateTempDirectory 函数（只执行前两步：复制模板 + 同步文章）
 		// 注意：这里不需要构建，因为后面会单独执行 hexo generate 和 deploy
+		new Notice(`[2/7] 正在复制模板...`);
 		await generateTempDirectory(plugin as any);
+		new Notice(`[2/7] 模板复制完成`);
 	}
 
 	// 4. 检查临时目录是否包含 Hexo 项目
@@ -194,7 +198,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 	// 7. 复制源文档到临时目录的 source/_posts
 	try {
-		new Notice("正在复制博客文章...");
+		new Notice(`[3/7] 正在复制博客文章...`);
 		const postsDir = path.join(tempDir, "source", "_posts");
 		console.log("Copying posts to:", postsDir);
 
@@ -210,11 +214,11 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		}
 
 		copyMarkdownFiles(sourceDir, postsDir, excludeDirs);
-		new Notice("文章复制完成");
+		new Notice(`[3/7] 文章复制完成`);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		new Notice(`文章复制失败: ${errorMessage}`);
+		new Notice(`[3/7] 错误: 文章复制失败 - ${errorMessage}`);
 		console.error("Posts copy error:", error);
 		return;
 	}
@@ -225,7 +229,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		const packageJsonPath = path.join(tempDir, "package.json");
 		const nodeModulesPath = path.join(tempDir, "node_modules");
 		if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
-			new Notice("正在安装 Hexo 依赖...");
+			new Notice(`[4/7] 正在安装 Hexo 依赖...`);
 			// 使用国内镜像加速 npm install
 			const installCmd = `npm install --registry=https://registry.npmmirror.com`;
 			console.log(`Executing: ${installCmd}`);
@@ -255,13 +259,15 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 					console.log("Install output:", installResult.stdout);
 				if (installResult.stderr)
 					console.warn("Install warnings:", installResult.stderr);
-				new Notice("依赖安装完成");
+				new Notice(`[4/7] 依赖安装完成`);
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-				new Notice(`依赖安装失败: ${errorMessage}`);
+				new Notice(`[4/7] 错误: 依赖安装失败 - ${errorMessage}`);
 				console.error("Install error:", error);
 			}
+		} else {
+			new Notice(`[4/7] 跳过依赖安装（node_modules 已存在）`);
 		}
 
 		// 8.2 确定要使用的 Hexo 命令（在 npm install 之后检测）
@@ -331,7 +337,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		};
 
 		// 执行 hexo generate（生成静态文件）
-		new Notice("正在生成静态文件...");
+		new Notice(`[5/7] 正在生成静态文件...`);
 		const generateCmd = `${hexoCmd} generate`;
 		console.log(`Executing: ${generateCmd}`);
 		const generateResult = await execAsync(generateCmd, {
@@ -344,7 +350,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			console.warn("Generate warnings:", generateResult.stderr);
 
 		// 执行 hexo clean
-		new Notice("正在清理 Hexo...");
+		new Notice(`[6/7] 正在清理 Hexo...`);
 		const cleanCmd = `${hexoCmd} clean`;
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
@@ -357,7 +363,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			console.warn("Clean warnings:", cleanResult.stderr);
 
 		// 执行 hexo deploy
-		new Notice("正在部署 Hexo...");
+		new Notice(`[7/7] 正在部署 Hexo...`);
 		const deployCmd = `${hexoCmd} deploy`;
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
@@ -365,14 +371,14 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			env: env,
 		});
 
-		new Notice("Hexo 部署成功!");
+		new Notice(`[7/7] Hexo 部署成功! ✅`);
 		console.log("Deploy output:", deployResult.stdout);
 		if (deployResult.stderr)
 			console.warn("Deploy warnings:", deployResult.stderr);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		new Notice(`Hexo 部署失败: ${errorMessage}`);
+		new Notice(`Hexo 部署失败 ❌: ${errorMessage}`);
 		console.error("Hexo error:", error);
 	}
 }
