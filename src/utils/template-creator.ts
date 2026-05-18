@@ -1030,9 +1030,9 @@ function generateNextConfig(options: {
 	siteUrl?: string;
 }): string {
 	const {
-		siteTitle = "My Blog",
+		// siteTitle = "My Blog",
 		siteAuthor = "Author",
-		siteUrl = "https://example.com",
+		// siteUrl = "https://example.com",
 	} = options;
 	return `# Hexo NexT 主题配置
 ## Docs: https://theme-next.js.org/docs/
@@ -1079,7 +1079,7 @@ function generateButterflyConfig(options: {
 	siteUrl?: string;
 }): string {
 	const {
-		siteTitle = "My Blog",
+		// siteTitle = "My Blog",
 		siteAuthor = "Author",
 		siteUrl = "https://example.com",
 	} = options;
