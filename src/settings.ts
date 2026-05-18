@@ -9,7 +9,6 @@ import {
 	TFile,
 	FileSystemAdapter,
 	DropdownComponent,
-	Vault,
 } from "obsidian";
 import * as path from "path";
 import MyPlugin from "./main";
@@ -173,7 +172,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			this.plugin.settings.templateDirectory = path;
 			await this.plugin.saveSettings();
 			this.display();
-		} catch (_error) {
+		} catch {
 			// 错误已在 createHexoTemplate 中处理
 		}
 	}
@@ -218,7 +217,7 @@ export class BlogSettingTab extends PluginSettingTab {
 				text
 					.setDisabled(true)
 					.setValue("hexo-temp")
-					.setPlaceholder("hexo-temp"),
+					.setPlaceholder("Hexo-temp"),
 			);
 
 		new Setting(containerEl)
@@ -226,7 +225,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("Hexo 可执行文件路径。留空则使用系统默认值。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("hexo")
+					.setPlaceholder("Hexo")
 					.setValue(this.plugin.settings.hexoPath)
 					.onChange(async (value: string) => {
 						this.plugin.settings.hexoPath = value || "hexo";
@@ -367,7 +366,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("Hexo 博客的网站关键词，使用英文逗号分隔。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("java")
+					.setPlaceholder("Java")
 					.setValue(this.plugin.settings.siteKeywords)
 					.onChange((value: string) => {
 						// 自动将中文逗号替换为英文逗号
@@ -393,7 +392,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("Hexo 博客的作者名称。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("yhao521")
+					.setPlaceholder("Yhao521")
 					.setValue(this.plugin.settings.siteAuthor)
 					.onChange((value: string) => {
 						this.plugin.settings.siteAuthor = value;
@@ -498,7 +497,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("Hexo 博客的网站语言。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("zh-CN")
+					.setPlaceholder("Zh-cn")
 					.setValue(this.plugin.settings.siteLanguage)
 					.onChange(async (value: string) => {
 						this.plugin.settings.siteLanguage = value || "zh-CN";
@@ -515,7 +514,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("Hexo 博客的时区。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("Asia/Shanghai")
+					.setPlaceholder("Asia/shanghai")
 					.setValue(this.plugin.settings.siteTimezone)
 					.onChange(async (value: string) => {
 						this.plugin.settings.siteTimezone =
@@ -572,10 +571,10 @@ export class BlogSettingTab extends PluginSettingTab {
 		// 部署配置
 		const deployTypeSetting = new Setting(containerEl)
 			.setName("部署类型")
-			.setDesc("Hexo 部署方式（如 git）。")
+			.setDesc("Hexo deployment method (such as Git).")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("git")
+					.setPlaceholder("Git")
 					.setValue(this.plugin.settings.deployType)
 					.onChange(async (value: string) => {
 						this.plugin.settings.deployType = value || "git";
@@ -617,7 +616,7 @@ export class BlogSettingTab extends PluginSettingTab {
 			.setDesc("部署时推送的 Git 分支名称。")
 			.addText((text: TextComponent) =>
 				text
-					.setPlaceholder("gh-pages")
+					.setPlaceholder("Gh-pages")
 					.setValue(this.plugin.settings.deployBranch)
 					.onChange(async (value: string) => {
 						this.plugin.settings.deployBranch = value || "gh-pages";

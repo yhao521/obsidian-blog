@@ -88,7 +88,7 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 	const vaultPath =
 		adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "";
 	if (!vaultPath) {
-		new Notice("无法获取 Vault 路径");
+		new Notice("Unable to get vault path");
 		return;
 	}
 	// 构建插件目录路径：Vault/.obsidian/plugins/obsidian-blog/
@@ -126,12 +126,11 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 		// 检查模板目录是否包含 _config.yml
 		const templateConfigPath = path.join(templateDir, "_config.yml");
 		if (!fs.existsSync(templateConfigPath)) {
-			const proceed = confirm(
-				"模板目录中未检测到 _config.yml,这可能不是有效的 Hexo 模板。是否继续?",
+			// 在 Obsidian 插件环境中使用 Notice 而不是 confirm
+			new Notice(
+				"Template directory does not contain _config.yml. This may not be a valid hexo template.",
 			);
-			if (!proceed) {
-				return;
-			}
+			return;
 		}
 
 		// 复用 generateTempDirectory 函数（只执行前两步：复制模板 + 同步文章）
@@ -144,12 +143,11 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 	// 4. 检查临时目录是否包含 Hexo 项目
 	const hexoConfigPath = path.join(tempDir, "_config.yml");
 	if (!fs.existsSync(hexoConfigPath)) {
-		const proceed = confirm(
-			"临时目录中未检测到 _config.yml,这可能不是有效的 Hexo 项目。是否继续?",
+		// 在 Obsidian 插件环境中使用 Notice 而不是 confirm
+		new Notice(
+			"Temporary directory does not contain _config.yml. This may not be a valid hexo project.",
 		);
-		if (!proceed) {
-			return;
-		}
+		return;
 	}
 
 	// 5. 确定源目录
@@ -167,9 +165,9 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 
 	// 7. 复制源文档到临时目录的 source/_posts
 	try {
-		new Notice(`[3/7] 正在复制博客文章...`);
+		// new Notice(`[3/7] 正在复制博客文章...`);
 		const postsDir = path.join(tempDir, "source", "_posts");
-		console.log("Copying posts to:", postsDir);
+		// console.log("Copying posts to:", postsDir);
 
 		// 如果源目录是仓库根目录,排除临时目录和模板目录
 		const vaultRootPath =
@@ -199,13 +197,18 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 		const packageJsonPath = path.join(tempDir, "package.json");
 		const nodeModulesPath = path.join(tempDir, "node_modules");
 		if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
-			new Notice(`[4/7] 正在安装 Hexo 依赖...`);
+			new Notice(`[4/7] installing hexo dependencies...`);
 			// 使用国内镜像加速 npm install
 			const installCmd = `npm install --registry=https://registry.npmmirror.com`;
-			console.log(`Executing: ${installCmd}`);
+			// console.log(`Executing: ${installCmd}`);
 
 			// 确保子进程能访问 npm/node：获取当前 PATH，补充常见路径
-			const currentPath = process.env.PATH || "";
+			const currentPath =
+				(
+					globalThis as unknown as {
+						process?: { env: { PATH?: string } };
+					}
+				).process?.env?.PATH || "";
 			const commonPaths = [
 				"/usr/local/bin",
 				"/opt/homebrew/bin",
@@ -216,7 +219,11 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 				(p) => !currentPath.includes(p),
 			);
 			const installEnv = {
-				...process.env,
+				...((
+					globalThis as unknown as {
+						process?: { env: Record<string, string | undefined> };
+					}
+				).process?.env || {}),
 				PATH: [currentPath, ...extraPaths].filter(Boolean).join(":"),
 			};
 
@@ -226,15 +233,15 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 					env: installEnv,
 				});
 				if (installResult.stdout)
-					console.log("Install output:", installResult.stdout);
-				if (installResult.stderr)
-					console.warn("Install warnings:", installResult.stderr);
+					if (installResult.stderr)
+						// console.log("Install output:", installResult.stdout);
+						console.warn("Install warnings:", installResult.stderr);
 				new Notice(`[4/7] 依赖安装完成`);
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
 				new Notice(`[4/7] 错误: 依赖安装失败 - ${errorMessage}`);
-				console.error("Install error:", error);
+				// console.error("Install error:", error);
 			}
 		} else {
 			new Notice(`[4/7] 跳过依赖安装（node_modules 已存在）`);
@@ -273,7 +280,7 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 					finalHexoCommand = hexoPath;
 					console.warn("Using global hexo:", finalHexoCommand);
 					break;
-				} catch (_error) {
+				} catch {
 					// 继续尝试下一个路径
 				}
 			}
@@ -291,7 +298,9 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 				: `"${finalHexoCommand}"`;
 
 		// 确保子进程能访问 node：获取当前 PATH，如果不存在则尝试添加常见 node 路径
-		const currentPath = process.env.PATH || "";
+		const currentPath =
+			(globalThis as unknown as { process?: { env: { PATH?: string } } })
+				.process?.env?.PATH || "";
 		const commonNodePaths = [
 			"/usr/local/bin",
 			"/opt/homebrew/bin",
@@ -302,53 +311,57 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 			(p) => !currentPath.includes(p),
 		);
 		const env = {
-			...process.env,
+			...((
+				globalThis as unknown as {
+					process?: { env: Record<string, string | undefined> };
+				}
+			).process?.env || {}),
 			PATH: [currentPath, ...extraPaths].filter(Boolean).join(":"),
 		};
 
 		// 执行 hexo generate（生成静态文件）
 		new Notice(`[5/7] 正在生成静态文件...`);
 		const generateCmd = `${hexoCmd} generate`;
-		console.log(`Executing: ${generateCmd}`);
+		// console.log(`Executing: ${generateCmd}`);
 		const generateResult = await execAsync(generateCmd, {
 			cwd: tempDir,
 			env: env,
 		});
 		if (generateResult.stdout)
-			console.log("Generate output:", generateResult.stdout);
-		if (generateResult.stderr)
-			console.warn("Generate warnings:", generateResult.stderr);
+			if (generateResult.stderr)
+				// console.log("Generate output:", generateResult.stdout);
+				console.warn("Generate warnings:", generateResult.stderr);
 
 		// 执行 hexo clean
-		new Notice(`[6/7] 正在清理 Hexo...`);
+		new Notice(`[6/7] cleaning hexo...`);
 		const cleanCmd = `${hexoCmd} clean`;
-		console.log(`Executing: ${cleanCmd}`);
+		// console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
 			env: env,
 		});
 		if (cleanResult.stdout)
-			console.log("Clean output:", cleanResult.stdout);
-		if (cleanResult.stderr)
-			console.warn("Clean warnings:", cleanResult.stderr);
+			if (cleanResult.stderr)
+				// console.log("Clean output:", cleanResult.stdout);
+				console.warn("Clean warnings:", cleanResult.stderr);
 
 		// 执行 hexo deploy
-		new Notice(`[7/7] 正在部署 Hexo...`);
+		new Notice(`[7/7] deploying hexo...`);
 		const deployCmd = `${hexoCmd} deploy`;
-		console.log(`Executing: ${deployCmd}`);
+		// console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
 			env: env,
 		});
 
-		new Notice(`[7/7] Hexo 部署成功! ✅`);
-		console.log("Deploy output:", deployResult.stdout);
+		new Notice(`[7/7] hexo deployment successful! ✅`);
+		// console.log("Deploy output:", deployResult.stdout);
 		if (deployResult.stderr)
 			console.warn("Deploy warnings:", deployResult.stderr);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
 		new Notice(`Hexo 部署失败 ❌: ${errorMessage}`);
-		console.error("Hexo error:", error);
+		// console.error("Hexo error:", error);
 	}
 }

@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import * as path from "path";
+// import * as path from "path";
 
 /**
  * 转换图片路径为 Hexo 相对路径
