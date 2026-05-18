@@ -216,51 +216,44 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 	}
 
 	// 8. 执行 Hexo 命令
-	// 确定要使用的 Hexo 命令
-	let finalHexoCommand = settings.hexoPath; // 用户自定义路径优先
+	// 优先使用临时目录中的本地 hexo，否则尝试全局 hexo
+	let finalHexoCommand = settings.hexoPath;
 	if (!finalHexoCommand) {
-		// 自动检测：按优先级尝试
-		// 1. 尝试常用全局路径
-		const commonPaths = [
-			"/usr/local/bin/hexo",
-			"/opt/homebrew/bin/hexo",
-			"/usr/bin/hexo",
-		];
-		for (const hexoPath of commonPaths) {
-			try {
-				await execAsync(`"${hexoPath}" --version`, {
-					cwd: tempDir,
-					env: { ...process.env },
-				});
-				finalHexoCommand = hexoPath;
-				break;
-			} catch (_error) {
-				// 继续尝试下一个路径
-			}
-		}
-
-		// 2. 如果常用路径都没找到，尝试 zsh 环境下的 hexo
-		if (!finalHexoCommand) {
-			try {
-				await execAsync("/bin/zsh -l -c 'hexo --version'", {
-					cwd: tempDir,
-					env: { ...process.env },
-				});
-				finalHexoCommand = "hexo";
-			} catch (_error) {
-				// 3. 最后尝试 npx
+		// 1. 检查临时目录中是否有本地 hexo
+		const localHexoPath = path.join(
+			tempDir,
+			"node_modules",
+			".bin",
+			"hexo",
+		);
+		if (fs.existsSync(localHexoPath)) {
+			finalHexoCommand = localHexoPath;
+			console.warn("Using local hexo:", finalHexoCommand);
+		} else {
+			// 2. 尝试全局 hexo
+			const commonPaths = [
+				"/usr/local/bin/hexo",
+				"/opt/homebrew/bin/hexo",
+				"/usr/bin/hexo",
+			];
+			for (const hexoPath of commonPaths) {
 				try {
-					await execAsync("npx hexo --version", {
+					await execAsync(`"${hexoPath}" --version`, {
 						cwd: tempDir,
-						env: { ...process.env },
+						// 移除 env，使用默认环境
 					});
-					finalHexoCommand = "npx hexo";
-				} catch (_npxError) {
-					new Notice(
-						"Hexo 未找到。请确认已安装 Hexo（npm install -g hexo-cli），或在设置中配置正确的 Hexo 路径。",
-					);
-					return;
+					finalHexoCommand = hexoPath;
+					console.warn("Using global hexo:", finalHexoCommand);
+					break;
+				} catch (_error) {
+					// 继续尝试下一个路径
 				}
+			}
+
+			// 3. 如果都没找到，尝试 npx
+			if (!finalHexoCommand) {
+				finalHexoCommand = "npx hexo";
+				console.warn("Using npx hexo as fallback");
 			}
 		}
 	}
@@ -282,7 +275,6 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			try {
 				const installResult = await execAsync(installCmd, {
 					cwd: tempDir,
-					env: { ...process.env },
 				});
 				if (installResult.stdout)
 					console.log("Install output:", installResult.stdout);
@@ -303,7 +295,6 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
-			env: { ...process.env },
 		});
 		if (cleanResult.stdout)
 			console.log("Clean output:", cleanResult.stdout);
@@ -316,7 +307,6 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
-			env: { ...process.env },
 		});
 
 		new Notice("Hexo 部署成功!");
