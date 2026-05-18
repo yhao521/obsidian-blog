@@ -455,7 +455,7 @@ footer:
 index:
   # 首页 Banner 头图，可以是相对路径或绝对路径，以下相同
   # Path of Banner image, can be a relative path or an absolute path, the same on other pages
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
 
   # 头图高度，屏幕百分比
   # Height ratio of banner image
@@ -526,7 +526,7 @@ index:
 # Post Page
 #---------------------------
 post:
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 70
   banner_mask_alpha: 0.3
 
@@ -729,10 +729,10 @@ post:
 # about Page
 #---------------------------
 about:
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 60
   banner_mask_alpha: 0.3
-  avatar: /img/avatar2.png
+  avatar: ${siteAvatar}
   name: "匆匆过客的博客"
   intro: "不积跬步无以至千里, 仰望星空还需脚踏实地"
   icons:
@@ -906,7 +906,7 @@ discuss:
 # Archive Page
 #---------------------------
 archive:
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 60
   banner_mask_alpha: 0.3
 
@@ -916,7 +916,7 @@ archive:
 #---------------------------
 category:
   enable: true
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 60
   banner_mask_alpha: 0.3
 
@@ -944,7 +944,7 @@ category:
 #---------------------------
 tag:
   enable: true
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 80
   banner_mask_alpha: 0.3
   tagcloud:
@@ -962,7 +962,7 @@ tag:
 # Custom Page through `hexo new page`
 #---------------------------
 page:
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 60
   banner_mask_alpha: 0.3
 
@@ -972,7 +972,7 @@ page:
 #---------------------------
 page404:
   enable: true
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 85
   banner_mask_alpha: 0.3
   # 重定向到首页的延迟(毫秒)
@@ -985,7 +985,7 @@ page404:
 #---------------------------
 links:
   enable: true
-  banner_img: /img/bg.png
+  banner_img: ${bannerImg}
   banner_img_height: 60
   banner_mask_alpha: 0.3
   # 友链的成员项

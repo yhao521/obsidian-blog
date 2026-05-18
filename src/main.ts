@@ -5,6 +5,7 @@ import {
 	BlogSettingTab,
 } from "./settings";
 import { deployHexo } from "./commands/hexo-deploy";
+import { copyTemplateToTemp } from "./commands/copy-template";
 
 export default class BlogPlugin extends Plugin {
 	settings: BlogPluginSettings;
@@ -22,6 +23,13 @@ export default class BlogPlugin extends Plugin {
 			id: "deploy-hexo-blog",
 			name: "发布 hexo 博客",
 			callback: () => deployHexo(this),
+		});
+
+		// 注册复制模板命令
+		this.addCommand({
+			id: "copy-template-to-temp",
+			name: "复制模板到临时目录",
+			callback: () => copyTemplateToTemp(this),
 		});
 
 		// 添加设置面板

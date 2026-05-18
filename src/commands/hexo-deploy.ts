@@ -3,6 +3,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { copyTemplateToTemp } from "./copy-template";
 
 const execAsync = promisify(exec);
 
@@ -158,23 +159,8 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 			}
 		}
 
-		try {
-			new Notice("正在复制模板文件...");
-			console.log("Copying template from:", templateDir);
-			copyDirectory(templateDir, tempDir, [
-				".obsidian",
-				".git",
-				"node_modules",
-				"images",
-			]);
-			new Notice("模板复制完成");
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : String(error);
-			new Notice(`模板复制失败: ${errorMessage}`);
-			console.error("Template copy error:", error);
-			return;
-		}
+		// 复用 copyTemplateToTemp 函数
+		await copyTemplateToTemp(plugin as any);
 	}
 
 	// 4. 检查临时目录是否包含 Hexo 项目
