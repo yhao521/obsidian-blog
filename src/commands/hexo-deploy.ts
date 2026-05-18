@@ -243,49 +243,58 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 		}
 
 		// 8.2 确定要使用的 Hexo 命令（在 npm install 之后检测）
-		let finalHexoCommand = settings.hexoPath;
-		if (!finalHexoCommand) {
-			// 1. 检查临时目录中是否有本地 hexo（npm install 后应该存在）
-			const localHexoPath = path.join(
-				tempDir,
-				"node_modules",
-				".bin",
-				"hexo",
-			);
-			if (fs.existsSync(localHexoPath)) {
-				finalHexoCommand = localHexoPath;
-				console.warn("Using local hexo:", finalHexoCommand);
-			} else {
-				// 2. 尝试全局 hexo
-				const commonPaths = [
-					"/usr/local/bin/hexo",
-					"/opt/homebrew/bin/hexo",
-					"/usr/bin/hexo",
-				];
-				for (const hexoPath of commonPaths) {
-					try {
-						await execAsync(`"${hexoPath}" --version`, {
-							cwd: tempDir,
-						});
-						finalHexoCommand = hexoPath;
-						console.warn("Using global hexo:", finalHexoCommand);
-						break;
-					} catch (_error) {
-						// 继续尝试下一个路径
-					}
-				}
+		// 始终检测可用的 hexo，即使设置了 hexoPath 也要验证是否存在
+		let finalHexoCommand = "npx hexo"; // 默认 fallback
 
-				// 3. 如果都没找到，尝试 npx
-				if (!finalHexoCommand) {
-					finalHexoCommand = "npx hexo";
-					console.warn("Using npx hexo as fallback");
+		// 1. 优先检查临时目录中是否有本地 hexo（npm install 后应该存在）
+		const localHexoPath = path.join(
+			tempDir,
+			"node_modules",
+			".bin",
+			"hexo",
+		);
+		if (fs.existsSync(localHexoPath)) {
+			finalHexoCommand = localHexoPath;
+			console.warn("Using local hexo:", finalHexoCommand);
+		} else if (settings.hexoPath) {
+			// 2. 使用用户配置的 hexoPath（可能是绝对路径或命令名）
+			finalHexoCommand = settings.hexoPath;
+			console.warn("Using configured hexo:", finalHexoCommand);
+		} else {
+			// 3. 尝试全局 hexo
+			const commonPaths = [
+				"/usr/local/bin/hexo",
+				"/opt/homebrew/bin/hexo",
+				"/usr/bin/hexo",
+			];
+			for (const hexoPath of commonPaths) {
+				try {
+					await execAsync(`"${hexoPath}" --version`, {
+						cwd: tempDir,
+					});
+					finalHexoCommand = hexoPath;
+					console.warn("Using global hexo:", finalHexoCommand);
+					break;
+				} catch (_error) {
+					// 继续尝试下一个路径
 				}
+			}
+
+			// 4. 如果都没找到，使用 npx（已在初始化时设置）
+			if (finalHexoCommand === "npx hexo") {
+				console.warn("Using npx hexo as fallback");
 			}
 		}
 
+		// 准备命令：如果是 npx hexo 则不加引号，否则加引号处理路径空格
+		const hexoCmd =
+			finalHexoCommand === "npx hexo"
+				? "npx hexo"
+				: `"${finalHexoCommand}"`;
+
 		// 执行 hexo generate（生成静态文件）
 		new Notice("正在生成静态文件...");
-		const generateCmd = `${finalHexoCommand} generate`;
+		const generateCmd = `${hexoCmd} generate`;
 		console.log(`Executing: ${generateCmd}`);
 		const generateResult = await execAsync(generateCmd, {
 			cwd: tempDir,
@@ -297,7 +306,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 		// 执行 hexo clean
 		new Notice("正在清理 Hexo...");
-		const cleanCmd = `${finalHexoCommand} clean`;
+		const cleanCmd = `${hexoCmd} clean`;
 		console.log(`Executing: ${cleanCmd}`);
 		const cleanResult = await execAsync(cleanCmd, {
 			cwd: tempDir,
@@ -309,7 +318,7 @@ export async function deployHexo(plugin: Plugin): Promise<void> {
 
 		// 执行 hexo deploy
 		new Notice("正在部署 Hexo...");
-		const deployCmd = `${finalHexoCommand} deploy`;
+		const deployCmd = `${hexoCmd} deploy`;
 		console.log(`Executing: ${deployCmd}`);
 		const deployResult = await execAsync(deployCmd, {
 			cwd: tempDir,
