@@ -9,6 +9,7 @@ import {
 	TFile,
 	FileSystemAdapter,
 	DropdownComponent,
+	Notice,
 } from "obsidian";
 import * as path from "path";
 import MyPlugin from "./main";
@@ -284,7 +285,44 @@ export class BlogSettingTab extends PluginSettingTab {
 						this.plugin,
 						"imageResourceDir",
 						(path: string) => {
-							this.plugin.settings.imageResourceDir = path;
+							// 提取旧目录名和新目录名
+							const oldDir =
+								this.plugin.settings.imageResourceDir;
+							const newDir = path;
+							this.plugin.settings.imageResourceDir = newDir;
+
+							// 自动更新头像和背景图路径
+							if (oldDir && newDir && oldDir !== newDir) {
+								const updatePath = (
+									currentPath: string,
+								): string => {
+									if (!currentPath) return currentPath;
+									// 如果当前路径以旧目录开头，替换为新目录
+									if (currentPath.startsWith(oldDir + "/")) {
+										return (
+											newDir +
+											"/" +
+											currentPath.slice(oldDir.length + 1)
+										);
+									}
+									// 如果当前路径以旧目录开头但没有斜杠（直接是目录名），也替换
+									if (
+										currentPath === oldDir ||
+										currentPath.startsWith(oldDir)
+									) {
+										return newDir;
+									}
+									return currentPath;
+								};
+
+								this.plugin.settings.siteAvatar = updatePath(
+									this.plugin.settings.siteAvatar,
+								);
+								this.plugin.settings.bannerImg = updatePath(
+									this.plugin.settings.bannerImg,
+								);
+							}
+
 							void this.plugin.saveSettings();
 							this.display(); // 刷新设置界面
 						},
@@ -296,8 +334,45 @@ export class BlogSettingTab extends PluginSettingTab {
 					.setPlaceholder("/path/to/images 或从仓库中选择")
 					.setValue(this.plugin.settings.imageResourceDir)
 					.onChange(async (value: string) => {
-						this.plugin.settings.imageResourceDir = value;
+						// 提取旧目录名和新目录名
+						const oldDir = this.plugin.settings.imageResourceDir;
+						const newDir = value;
+						this.plugin.settings.imageResourceDir = newDir;
+
+						// 自动更新头像和背景图路径
+						if (oldDir && newDir && oldDir !== newDir) {
+							const updatePath = (
+								currentPath: string,
+							): string => {
+								if (!currentPath) return currentPath;
+								// 如果当前路径以旧目录开头，替换为新目录
+								if (currentPath.startsWith(oldDir + "/")) {
+									return (
+										newDir +
+										"/" +
+										currentPath.slice(oldDir.length + 1)
+									);
+								}
+								// 如果当前路径以旧目录开头但没有斜杠（直接是目录名），也替换
+								if (
+									currentPath === oldDir ||
+									currentPath.startsWith(oldDir)
+								) {
+									return newDir;
+								}
+								return currentPath;
+							};
+
+							this.plugin.settings.siteAvatar = updatePath(
+								this.plugin.settings.siteAvatar,
+							);
+							this.plugin.settings.bannerImg = updatePath(
+								this.plugin.settings.bannerImg,
+							);
+						}
+
 						await this.plugin.saveSettings();
+						this.display(); // 刷新设置界面
 					}),
 			);
 
@@ -443,12 +518,62 @@ export class BlogSettingTab extends PluginSettingTab {
 			.addButton((button: ButtonComponent) =>
 				button.setButtonText("选择").onClick(() => {
 					new ImageSuggestModal(this.plugin, (path: string) => {
+						// 提取图片所在目录
+						const imageDir = path.substring(
+							0,
+							path.lastIndexOf("/"),
+						);
+
+						// 检查两个图片目录是否一致
+						const avatarDir =
+							this.plugin.settings.siteAvatar?.substring(
+								0,
+								this.plugin.settings.siteAvatar.lastIndexOf(
+									"/",
+								),
+							) || "";
+						const bannerDir =
+							this.plugin.settings.bannerImg?.substring(
+								0,
+								this.plugin.settings.bannerImg.lastIndexOf("/"),
+							) || "";
+
+						// 如果是选择头像，检查与背景图目录是否一致
+						if (bannerDir && imageDir !== bannerDir) {
+							new Notice(
+								`提示：头像目录 (${imageDir}) 与背景图目录 (${bannerDir}) 不一致，已自动更新图片资源目录`,
+								5000,
+							);
+						}
+
+						// 如果当前图片资源目录与图片所在目录不一致，自动更新
+						if (
+							imageDir &&
+							this.plugin.settings.imageResourceDir !== imageDir
+						) {
+							this.plugin.settings.imageResourceDir = imageDir;
+						}
+
 						this.plugin.settings.siteAvatar = path;
 						const avatarInput =
 							avatarSetting.controlEl.querySelector("input");
 						if (avatarInput) {
 							avatarInput.value = path;
 						}
+
+						// 同步更新图片资源目录的输入框
+						const imageDirInput =
+							containerEl.querySelectorAll("input");
+						for (const input of Array.from(imageDirInput)) {
+							if (
+								input.placeholder?.includes("/path/to/images")
+							) {
+								input.value =
+									this.plugin.settings.imageResourceDir;
+								break;
+							}
+						}
+
 						void this.plugin.saveSettings();
 					}).open();
 				}),
@@ -476,12 +601,62 @@ export class BlogSettingTab extends PluginSettingTab {
 			.addButton((button: ButtonComponent) =>
 				button.setButtonText("选择").onClick(() => {
 					new ImageSuggestModal(this.plugin, (path: string) => {
+						// 提取图片所在目录
+						const imageDir = path.substring(
+							0,
+							path.lastIndexOf("/"),
+						);
+
+						// 检查两个图片目录是否一致
+						const avatarDir =
+							this.plugin.settings.siteAvatar?.substring(
+								0,
+								this.plugin.settings.siteAvatar.lastIndexOf(
+									"/",
+								),
+							) || "";
+						const bannerDir =
+							this.plugin.settings.bannerImg?.substring(
+								0,
+								this.plugin.settings.bannerImg.lastIndexOf("/"),
+							) || "";
+
+						// 如果是选择背景图，检查与头像目录是否一致
+						if (avatarDir && imageDir !== avatarDir) {
+							new Notice(
+								`提示：背景图目录 (${imageDir}) 与头像目录 (${avatarDir}) 不一致，已自动更新图片资源目录`,
+								5000,
+							);
+						}
+
+						// 如果当前图片资源目录与图片所在目录不一致，自动更新
+						if (
+							imageDir &&
+							this.plugin.settings.imageResourceDir !== imageDir
+						) {
+							this.plugin.settings.imageResourceDir = imageDir;
+						}
+
 						this.plugin.settings.bannerImg = path;
 						const bannerInput =
 							bannerSetting.controlEl.querySelector("input");
 						if (bannerInput) {
 							bannerInput.value = path;
 						}
+
+						// 同步更新图片资源目录的输入框
+						const imageDirInput =
+							containerEl.querySelectorAll("input");
+						for (const input of Array.from(imageDirInput)) {
+							if (
+								input.placeholder?.includes("/path/to/images")
+							) {
+								input.value =
+									this.plugin.settings.imageResourceDir;
+								break;
+							}
+						}
+
 						void this.plugin.saveSettings();
 					}).open();
 				}),
