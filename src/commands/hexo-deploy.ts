@@ -133,10 +133,10 @@ export async function deployHexo(plugin: BlogPlugin): Promise<void> {
 			return;
 		}
 
-		// 复用 generateTempDirectory 函数（只执行前两步：复制模板 + 同步文章）
+		// 复用 generateTempDirectory 函数（静默模式，不显示详细步骤提示）
 		// 注意：这里不需要构建，因为后面会单独执行 hexo generate 和 deploy
 		new Notice(`[2/7] 正在复制模板...`);
-		await generateTempDirectory(plugin);
+		await generateTempDirectory(plugin, true);
 		new Notice(`[2/7] 模板复制完成`);
 	}
 

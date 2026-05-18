@@ -74,8 +74,13 @@ function copyMarkdownFiles(
 
 /**
  * 生成临时目录：复制模板 → 同步文章
+ * @param plugin 插件实例
+ * @param silent 是否静默模式（不显示详细步骤提示，只在出错时显示）
  */
-export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
+export async function generateTempDirectory(
+	plugin: BlogPlugin,
+	silent = false,
+): Promise<void> {
 	const { settings, app } = plugin;
 
 	try {
@@ -120,7 +125,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 		}
 
 		// 步骤 1: 复制模板目录内容到临时目录
-		new Notice("步骤 1/3: 正在复制模板文件...");
+		if (!silent) new Notice("步骤 1/3: 正在复制模板文件...");
 		console.warn("Copying template from:", templateDir, "to:", tempDir);
 
 		copyDirectory(templateDir, tempDir, [
@@ -218,10 +223,10 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			}
 		}
 
-		new Notice("步骤 1/3: 模板复制完成");
+		if (!silent) new Notice("步骤 1/3: 模板复制完成");
 
 		// 步骤 2: 同步文章
-		new Notice("步骤 2/3: 正在同步文章...");
+		if (!silent) new Notice("步骤 2/3: 正在同步文章...");
 		let sourceDir = settings.sourceDirectory || vaultPath;
 		if (sourceDir && !path.isAbsolute(sourceDir)) {
 			sourceDir = path.join(vaultPath, sourceDir);
@@ -240,9 +245,9 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			tempDirName, // 排除临时目录
 		]);
 
-		new Notice("步骤 2/3: 文章同步完成");
+		if (!silent) new Notice("步骤 2/3: 文章同步完成");
 
-		new Notice("临时目录生成成功！");
+		if (!silent) new Notice("临时目录生成成功！");
 		console.error("Temp directory generated:", tempDir);
 	} catch (error) {
 		const errorMessage =
