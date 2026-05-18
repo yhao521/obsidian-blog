@@ -170,11 +170,37 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			const targetConfigPath = path.join(tempDir, "_config.fluid.yml");
 			console.warn("Found fluid template:", fluidTemplatePath);
 			console.warn("Target config path:", targetConfigPath);
+
+			// 转换图片路径为 Hexo 相对路径
+			const convertToHexoPath = (imgPath: string): string => {
+				if (!imgPath) return "/img/bg.png";
+
+				// 如果已经是绝对路径（以 / 开头），直接返回
+				if (imgPath.startsWith("/")) return imgPath;
+
+				// 处理外部资源目录路径，如 "_resource/avatar.png" -> "/img/avatar.png"
+				// 所有外部资源（_img, _resource, _images 等）都会复制到临时目录的 source/img/ 下
+				// 所以统一提取文件名部分，添加 /img/ 前缀
+				const fileName = imgPath.split("/").pop() || imgPath;
+
+				return `/img/${fileName}`;
+			};
+
+			const siteAvatar = convertToHexoPath(
+				settings.siteAvatar || "/img/avatar.png",
+			);
+			const bannerImg = convertToHexoPath(
+				settings.bannerImg || "/img/bg.png",
+			);
+
+			console.warn("Converted avatar path:", siteAvatar);
+			console.warn("Converted banner path:", bannerImg);
+
 			processFluidConfig(fluidTemplatePath, targetConfigPath, {
 				siteTitle: settings.siteTitle,
 				siteSubtitle: settings.siteSubtitle,
-				siteAvatar: settings.siteAvatar,
-				bannerImg: settings.bannerImg,
+				siteAvatar: siteAvatar,
+				bannerImg: bannerImg,
 				siteAuthor: settings.siteAuthor,
 			});
 			// 验证文件是否生成

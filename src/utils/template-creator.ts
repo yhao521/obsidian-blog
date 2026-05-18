@@ -91,7 +91,7 @@ export async function createHexoTemplate(
 		// 创建目录结构
 		ensureDirectoryExists(absolutePath);
 		ensureDirectoryExists(path.join(absolutePath, "source", "_posts"));
-		ensureDirectoryExists(path.join(absolutePath, "source", "images"));
+		ensureDirectoryExists(path.join(absolutePath, "source", "img"));
 		ensureDirectoryExists(path.join(absolutePath, "source", "css"));
 		ensureDirectoryExists(path.join(absolutePath, "themes"));
 		ensureDirectoryExists(path.join(absolutePath, "scaffolds"));
@@ -115,7 +115,7 @@ export async function createHexoTemplate(
 			if (!imgPath) return "/img/bg.png";
 			// 如果已经是相对路径（以 / 开头），直接返回
 			if (imgPath.startsWith("/")) return imgPath;
-			// 移除模板目录前缀，如 "模板/source/images/bg.png" -> "/images/bg.png"
+			// 移除模板目录前缀，如 "模板/source/img/bg.png" -> "/img/bg.png"
 			const normalized = imgPath.replace(/^.*?source\//, "/");
 			return normalized.startsWith("/") ? normalized : `/${normalized}`;
 		};
@@ -386,7 +386,7 @@ This is a Hexo blog template created by Obsidian Blog Plugin.
 ├── package.json       # Node.js package file
 ── source/            # Source files
 │   ├── _posts/        # Blog posts
-│   ├── images/        # Images
+│   ├── img/        # img
 │   └── css/           # Custom CSS
 ├── themes/            # Themes directory
 └── scaffolds/         # Scaffold templates
@@ -798,7 +798,7 @@ web_analytics: # 网页访问统计
     ignore_local: false
 
 # 对页面中的图片和评论插件进行懒加载处理，可见范围外的元素不会提前加载
-# Lazy loading of images and comment plugin on the page
+# Lazy loading of img and comment plugin on the page
 lazyload:
   enable: true
 
