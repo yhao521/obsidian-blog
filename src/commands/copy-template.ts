@@ -38,9 +38,10 @@ function copyDirectory(
 }
 
 /**
- * 复制 Markdown 文件到指定目录
+ * 镜像同步 Markdown 文件到指定目录
+ * 会删除目标目录中存在但源目录中不存在的文件
  */
-function copyMarkdownFiles(
+function mirrorSyncMarkdownFiles(
 	srcDir: string,
 	destDir: string,
 	excludeDirs: string[] = [],
@@ -53,23 +54,80 @@ function copyMarkdownFiles(
 		fs.mkdirSync(destDir, { recursive: true });
 	}
 
-	const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+	// 收集目标目录中现有的md文件路径（用于后续清理）
+	const existingDestFiles = new Set<string>();
+	const collectExistingFiles = (dir: string) => {
+		if (!fs.existsSync(dir)) return;
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			const fullPath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				collectExistingFiles(fullPath);
+			} else if (entry.name.endsWith(".md")) {
+				existingDestFiles.add(fullPath);
+			}
+		}
+	};
+	collectExistingFiles(destDir);
 
-	for (const entry of entries) {
-		const srcPath = path.join(srcDir, entry.name);
-		const destPath = path.join(destDir, entry.name);
-
-		// 排除指定的目录
-		if (entry.isDirectory() && excludeDirs.includes(entry.name)) {
-			continue;
+	// 递归同步源目录到目标目录
+	const syncDirectory = (src: string, dest: string) => {
+		if (!fs.existsSync(dest)) {
+			fs.mkdirSync(dest, { recursive: true });
 		}
 
-		if (entry.isDirectory()) {
-			copyMarkdownFiles(srcPath, destPath, excludeDirs);
-		} else if (entry.name.endsWith(".md")) {
-			fs.copyFileSync(srcPath, destPath);
+		const entries = fs.readdirSync(src, { withFileTypes: true });
+
+		for (const entry of entries) {
+			const srcPath = path.join(src, entry.name);
+			const destPath = path.join(dest, entry.name);
+
+			// 排除指定的目录
+			if (entry.isDirectory() && excludeDirs.includes(entry.name)) {
+				continue;
+			}
+
+			if (entry.isDirectory()) {
+				syncDirectory(srcPath, destPath);
+			} else if (entry.name.endsWith(".md")) {
+				// 复制md文件
+				fs.copyFileSync(srcPath, destPath);
+				// 从待删除集合中移除（表示该文件应该保留）
+				existingDestFiles.delete(destPath);
+			}
+		}
+	};
+
+	syncDirectory(srcDir, destDir);
+
+	// 删除目标目录中存在但源目录中不存在的md文件
+	for (const filePath of existingDestFiles) {
+		try {
+			fs.unlinkSync(filePath);
+			console.warn("Deleted orphaned file:", filePath);
+		} catch (error) {
+			console.error("Failed to delete file:", filePath, error);
 		}
 	}
+
+	// 清理空目录（可选）
+	const cleanEmptyDirectories = (dir: string) => {
+		if (!fs.existsSync(dir)) return;
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			if (entry.isDirectory()) {
+				const subdir = path.join(dir, entry.name);
+				cleanEmptyDirectories(subdir);
+				// 检查目录是否为空
+				const remainingEntries = fs.readdirSync(subdir);
+				if (remainingEntries.length === 0) {
+					fs.rmdirSync(subdir);
+					console.warn("Removed empty directory:", subdir);
+				}
+			}
+		}
+	};
+	cleanEmptyDirectories(destDir);
 }
 
 /**
@@ -237,13 +295,26 @@ export async function generateTempDirectory(
 			fs.mkdirSync(postsDestDir, { recursive: true });
 		}
 
-		// 排除临时目录，避免无限递归
-		copyMarkdownFiles(sourceDir, postsDestDir, [
+		// 构建排除列表：包含临时目录和图片资源目录
+		const excludeDirs = [
 			app.vault.configDir,
 			".git",
 			"node_modules",
 			tempDirName, // 排除临时目录
-		]);
+		];
+
+		// 如果配置了图片资源目录，也排除它（保持单向同步，不复制图片资源目录中的md文件）
+		if (settings.imageResourceDir) {
+			let imageResourcePath = settings.imageResourceDir;
+			if (!path.isAbsolute(imageResourcePath)) {
+				imageResourcePath = path.join(vaultPath, imageResourcePath);
+			}
+			// 提取目录名用于排除
+			const imageResourceDirName = path.basename(imageResourcePath);
+			excludeDirs.push(imageResourceDirName);
+		}
+
+		mirrorSyncMarkdownFiles(sourceDir, postsDestDir, excludeDirs);
 
 		if (!silent) new Notice("步骤 2/3: 文章同步完成");
 
