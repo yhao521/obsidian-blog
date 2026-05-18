@@ -266,7 +266,7 @@ export class BlogSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("图片资源目录")
 			.setDesc(
-				"包含博客图片资源的目录（头像、背景图等）。部署时将复制到 source/images。",
+				"包含博客图片资源的目录（头像、背景图等）。部署时将复制到 source/img。",
 			)
 			.addButton((button: ButtonComponent) => {
 				button.setButtonText("选择").onClick(async () => {

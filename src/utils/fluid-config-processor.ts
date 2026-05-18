@@ -12,12 +12,12 @@ function convertToHexoPath(imgPath: string): string {
 	// 如果已经是绝对路径（以 / 开头），直接返回
 	if (imgPath.startsWith("/")) return imgPath;
 
-	// 移除模板目录前缀，如 "模板/source/images/bg.png" -> "/images/bg.png"
+	// 移除模板目录前缀，如 "模板/source/img/bg.png" -> "/img/bg.png"
 	const normalized = imgPath.replace(/^.*?source\//, "/");
 
-	// 如果只是文件名（如 "avatar.png"），自动添加 /images/ 前缀
+	// 如果只是文件名（如 "avatar.png"），自动添加 /img/ 前缀
 	if (!normalized.includes("/") && !normalized.startsWith("/")) {
-		return `/images/${normalized}`;
+		return `/img/${normalized}`;
 	}
 
 	// 确保以 / 开头

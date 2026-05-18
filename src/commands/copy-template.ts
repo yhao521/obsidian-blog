@@ -123,10 +123,10 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			app.vault.configDir,
 			".git",
 			"node_modules",
-			"images",
+			"img",
 		]);
 
-		// 如果配置了图片资源目录，复制图片到临时目录的 images 文件夹
+		// 如果配置了图片资源目录，复制图片到临时目录的 img 文件夹
 		if (settings.imageResourceDir) {
 			let imageResourcePath = settings.imageResourceDir;
 			if (!path.isAbsolute(imageResourcePath)) {
@@ -134,7 +134,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			}
 
 			if (fs.existsSync(imageResourcePath)) {
-				const targetImageDir = path.join(tempDir, "source", "images");
+				const targetImageDir = path.join(tempDir, "source", "img");
 				if (!fs.existsSync(targetImageDir)) {
 					fs.mkdirSync(targetImageDir, { recursive: true });
 				}
@@ -153,6 +153,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 
 		// 如果是 Fluid 主题，处理配置文件变量替换
 		const fluidTemplatePath = path.join(
+			vaultPath,
 			app.vault.configDir,
 			"plugins",
 			"obsidian-blog",
