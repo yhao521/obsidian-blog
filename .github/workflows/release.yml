@@ -1,0 +1,89 @@
+name: Release Plugin
+
+on:
+    push:
+        tags:
+            - "*"
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build plugin
+              run: npm run build
+
+            - name: Get version from manifest
+              id: version
+              run: echo "version=$(node -p "require('./manifest.json').version")" >> $GITHUB_OUTPUT
+
+            - name: Create plugin zip
+              run: |
+                  # 创建临时目录
+                  mkdir -p release-package
+                  # 复制必要文件（排除临时目录、模板目录、node_modules 等）
+                  cp main.js release-package/
+                  cp manifest.json release-package/
+                  cp styles.css release-package/
+                  cp -r assets release-package/
+                  # 打包为 zip
+                  cd release-package
+                  zip -r ../obsidian-blog-plugin-${{ steps.version.outputs.version }}.zip .
+                  cd ..
+                  # 显示打包内容
+                  echo "=== Package contents ==="
+                  unzip -l obsidian-blog-plugin-${{ steps.version.outputs.version }}.zip
+
+            - name: Create Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  name: Release ${{ github.ref_name }}
+                  draft: false
+                  prerelease: false
+                  body: |
+                      ## Obsidian Blog Plugin ${{ steps.version.outputs.version }}
+
+                      ### 安装
+
+                      #### 方式 1：使用 ZIP 包（推荐）
+
+                      1. 下载 `obsidian-blog-plugin-${{ steps.version.outputs.version }}.zip`
+                      2. 解压到 Obsidian 的插件目录：`Vault/.obsidian/plugins/obsidian-blog/`
+                      3. 在 Obsidian 中打开设置 → 第三方插件
+                      4. 启用 Obsidian Blog Plugin
+
+                      #### 方式 2：手动安装文件
+
+                      1. 下载 `main.js`、`manifest.json`、`styles.css`
+                      2. 放入插件目录：`Vault/.obsidian/plugins/obsidian-blog/`
+                      3. 在 Obsidian 中打开设置 → 第三方插件
+                      4. 启用 Obsidian Blog Plugin
+
+                      ### 文件说明
+
+                      - `obsidian-blog-plugin-${{ steps.version.outputs.version }}.zip` - 完整插件包（含 assets 目录）
+                      - `main.js` - 插件主文件
+                      - `manifest.json` - 插件配置
+                      - `styles.css` - 样式文件
+
+                      完整更新日志请参阅 [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)
+                  files: |
+                      obsidian-blog-plugin-${{ steps.version.outputs.version }}.zip
+                      main.js
+                      manifest.json
+                      styles.css
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

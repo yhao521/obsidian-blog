@@ -1,90 +1,183 @@
-# Obsidian Sample Plugin
+# Obsidian Blog Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+将 Obsidian 笔记发布为 Hexo 静态博客的插件。
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## 功能特性
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+### Hexo 博客部署
 
-## First time developing plugins?
+一键将 Obsidian 笔记部署为 Hexo 静态博客：
 
-Quick starting guide for new plugin devs:
+- **模板管理**：使用 Hexo 模板（支持 Fluid 主题）
+- **文章同步**：自动复制 Markdown 文件到 Hexo 的 `_posts` 目录
+- **自动构建**：安装依赖、生成静态文件、部署发布
+- **国内镜像**：npm install 使用淘宝镜像加速
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### 📸 图片资源管理
 
-## Releasing new releases
+- **图片目录配置**：支持自定义图片资源目录
+- **自动复制**：部署时自动复制图片到 Hexo 的 `source/img` 目录
+- **路径处理**：自动转换图片路径为 Hexo 格式
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### 🎨 Fluid 主题支持
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+- **外部配置**：支持从外部加载 Fluid 主题配置文件
+- **模板变量替换**：支持 `${bannerImg}`、`${siteAvatar}`、`${siteTitle}` 等占位符
+- **网站配置**：支持配置网站标题、副标题、作者、头像等信息
 
-## Adding your plugin to the community plugin list
+### 📁 目录管理
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+- **插件目录隔离**：临时目录和模板目录集中在插件目录下
+- **非隐藏目录**：使用 `hexo-temp` 和 `template` 目录（不隐藏）
+- **智能排除**：复制时自动排除 `.obsidian`、`.git`、`node_modules` 等目录
 
-## How to use
+## 安装
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### 手动安装
 
-## Manually installing the plugin
+1. 复制 `main.js`、`manifest.json`、`styles.css` 到插件目录
+2. 路径：`Vault/.obsidian/plugins/obsidian-blog/`
+3. 在 Obsidian 中启用插件
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+## 使用指南
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+### 1. 创建模板
 
-## Funding URL
+在设置页面点击 **"创建"** 按钮创建模板目录：
 
-You can include funding URLs where people who use your plugin can financially support it.
+- 模板目录位置：`Vault/.obsidian/plugins/obsidian-blog/template`
+- 包含 Hexo 项目结构和配置文件
+- 支持 Fluid 主题模板
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+### 2. 配置插件
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+在设置页面配置以下选项：
+
+| 配置项       | 说明                             |
+| ------------ | -------------------------------- |
+| 源目录       | 存放 Markdown 文章的目录         |
+| 临时目录名称 | 固定为 `hexo-temp`（插件目录下） |
+| Hexo 路径    | 自动检测本地 hexo                |
+| 模板目录     | 固定为 `template`（插件目录下）  |
+| 图片资源目录 | 存放图片资源的目录路径           |
+| 网站标题     | 网站标题                         |
+| 网站副标题   | 网站副标题                       |
+| 网站作者     | 网站作者（GitHub 用户名等）      |
+| 网站头像     | 头像图片路径                     |
+| 横幅图片     | 首页横幅图片路径                 |
+| 网站关键词   | SEO 关键词，英文逗号分隔         |
+
+### 3. 部署博客
+
+点击 **"发布 hexo 博客"** 命令，插件会自动完成：
+
+```
+[1/7] 准备临时目录...
+[2/7] 正在复制模板...
+[3/7] 正在复制博客文章...
+[4/7] 正在安装 Hexo 依赖... (使用国内镜像)
+[5/7] 正在生成静态文件...
+[6/7] 正在清理 Hexo...
+[7/7] 正在部署 Hexo... ✅
 ```
 
-If you have multiple URLs, you can also do:
+### 4. 清理临时目录
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+点击 **"清理临时目录"** 命令删除 `hexo-temp` 临时目录。
+
+## 目录结构
+
+```
+Vault/
+├── .obsidian/
+│   └── plugins/
+│       ── obsidian-blog/
+│           ├── template/           ← Hexo 模板目录
+│           │   ├── _config.yml
+│           │   ├── _config.fluid.yml
+│           │   ── ...
+│           ├── hexo-temp/          ← 临时构建目录
+│           │   ├── source/
+│           │   │   ├── _posts/     ← 复制的文章
+│           │   │   └── img/        ← 复制的图片
+│           │   ── ...
+│           ├── assets/             ← 内置资源
+│           │   └── _config.fluid.template.yml
+│           ├── main.js
+│           └── manifest.json
 ```
 
-## API Documentation
+## 命令列表
 
-See https://docs.obsidian.md
+| 命令           | 说明                            |
+| -------------- | ------------------------------- |
+| 发布 hexo 博客 | 部署 Hexo 博客（包含 7 个步骤） |
+| 清理临时目录   | 删除 hexo-temp 临时目录         |
+| 生成临时目录   | 复制模板、同步文章、处理配置    |
+
+## 技术细节
+
+### Hexo 命令检测
+
+插件会按以下优先级检测 hexo：
+
+1. **本地 hexo**：`node_modules/.bin/hexo`（优先使用）
+2. **用户配置**：自定义的 hexoPath
+3. **全局 hexo**：`/usr/local/bin/hexo`、`/opt/homebrew/bin/hexo`
+4. **npx hexo**：最后 fallback
+
+### 环境变量
+
+所有子进程命令都继承完整的环境变量，确保能访问 `node`、`npm` 等可执行文件。
+
+### 路径处理
+
+- 支持包含空格的路径（使用双引号包裹）
+- 自动转换图片路径为 Hexo 格式
+- 防止路径遍历攻击
+
+## 开发
+
+### 环境要求
+
+- Node.js 18+
+- Obsidian 最新版
+
+### 开发命令
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式（监听文件变化）
+npm run dev
+
+# 生产构建
+npm run build
+
+# 代码检查
+npm run lint
+```
+
+### 项目结构
+
+```
+src/
+├── main.ts              ← 插件入口
+├── settings.ts          ← 设置界面
+└── commands/
+    ├── hexo-deploy.ts   ← 博客部署
+    ├── copy-template.ts ← 模板复制
+    ── clean-temp.ts    ← 清理临时目录
+└── utils/
+    ├── fluid-config-processor.ts  ← Fluid 配置处理
+    └── template-creator.ts        ← 模板创建
+```
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 许可证
+
+MIT License
