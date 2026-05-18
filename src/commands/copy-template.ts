@@ -1,12 +1,8 @@
 import { Notice, FileSystemAdapter } from "obsidian";
-import { exec } from "child_process";
-import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import BlogPlugin from "../main";
 import { processFluidConfig } from "../utils/fluid-config-processor";
-
-const execAsync = promisify(exec);
 
 /**
  * 递归复制目录,跳过指定的文件和文件夹
@@ -77,7 +73,7 @@ function copyMarkdownFiles(
 }
 
 /**
- * 生成临时目录：复制模板 → 同步文章 → 构建
+ * 生成临时目录：复制模板 → 同步文章
  */
 export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 	const { settings, app } = plugin;
@@ -163,15 +159,31 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 			"assets",
 			"_config.fluid.template.yml",
 		);
+
+		// 检查是否存在外部 Fluid 模板文件
 		if (fs.existsSync(fluidTemplatePath)) {
 			const targetConfigPath = path.join(tempDir, "_config.fluid.yml");
+			console.warn("Found fluid template:", fluidTemplatePath);
+			console.warn("Target config path:", targetConfigPath);
 			processFluidConfig(fluidTemplatePath, targetConfigPath, {
 				siteTitle: settings.siteTitle,
 				siteSubtitle: settings.siteSubtitle,
 				siteAvatar: settings.siteAvatar,
 				bannerImg: settings.bannerImg,
 			});
-			console.warn("Fluid config processed with variables");
+			// 验证文件是否生成
+			if (fs.existsSync(targetConfigPath)) {
+				console.warn("Fluid config generated successfully");
+			} else {
+				console.error("Fluid config NOT generated!");
+			}
+		} else {
+			console.warn("Fluid template file not found:", fluidTemplatePath);
+			// 检查临时目录中是否已有 _config.fluid.yml
+			const existingConfigPath = path.join(tempDir, "_config.fluid.yml");
+			if (!fs.existsSync(existingConfigPath)) {
+				console.warn("No Fluid config found in temp directory");
+			}
 		}
 
 		new Notice("步骤 1/3: 模板复制完成");
@@ -198,16 +210,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 
 		new Notice("步骤 2/3: 文章同步完成");
 
-		// 步骤 3: 构建 Hexo
-		new Notice("步骤 3/3: 正在构建...");
-		console.warn("Running hexo generate in:", tempDir);
-
-		await execAsync("npx hexo generate", {
-			cwd: tempDir,
-		});
-
-		new Notice("步骤 3/3: 构建完成");
-		new Notice("临时目录生成成功");
+		new Notice("临时目录生成成功！");
 		console.error("Temp directory generated:", tempDir);
 	} catch (error) {
 		const errorMessage =
