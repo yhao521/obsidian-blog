@@ -171,6 +171,7 @@ export async function generateTempDirectory(plugin: BlogPlugin): Promise<void> {
 				siteSubtitle: settings.siteSubtitle,
 				siteAvatar: settings.siteAvatar,
 				bannerImg: settings.bannerImg,
+				siteAuthor: settings.siteAuthor,
 			});
 			// 验证文件是否生成
 			if (fs.existsSync(targetConfigPath)) {

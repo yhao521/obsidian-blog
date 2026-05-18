@@ -733,12 +733,12 @@ about:
   banner_img_height: 60
   banner_mask_alpha: 0.3
   avatar: ${siteAvatar}
-  name: {siteTitle}
-  intro: {siteSubtitle}
+  name: ${siteTitle}
+  intro: ${siteSubtitle}
   icons:
     - {
         class: "iconfont icon-github-fill",
-        link: "https://github.com/yhao521",
+        link: "https://github.com/${siteAuthor}",
         tip: "GitHub",
       }
     - { class: "iconfont icon-wechat-fill", qrcode: "/img/favicon.png" }

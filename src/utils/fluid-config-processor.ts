@@ -38,6 +38,7 @@ export function processFluidConfig(
 		siteSubtitle?: string;
 		siteAvatar?: string;
 		bannerImg?: string;
+		siteAuthor?: string;
 	},
 ): void {
 	if (!fs.existsSync(sourceConfigPath)) {
@@ -48,6 +49,7 @@ export function processFluidConfig(
 
 	const siteTitle = config.siteTitle || "My Blog";
 	const siteSubtitle = config.siteSubtitle || "";
+	const siteAuthor = config.siteAuthor || "";
 	const siteAvatar = convertToHexoPath(
 		config.siteAvatar || "/img/avatar.png",
 	);
@@ -57,51 +59,16 @@ export function processFluidConfig(
 	configContent = configContent
 		// 导航栏标题
 		.replace(/blog_title: .*/g, `blog_title: "${siteTitle}"`)
-		// 首页背景图
-		.replace(
-			/^index:\s*[\s\S]*?banner_img:.*$/m,
-			`index:\n  banner_img: ${bannerImg}`,
-		)
-		// 文章页背景图
-		.replace(
-			/^post:\s*[\s\S]*?banner_img:.*$/m,
-			`post:\n  banner_img: ${bannerImg}`,
-		)
-		// 关于页配置（包括背景图、头像、名称、简介）
-		.replace(
-			/^about:[\s\S]*?(?=\n#|$)/m,
-			`about:\n  banner_img: ${bannerImg}\n  banner_img_height: 60\n  banner_mask_alpha: 0.3\n  avatar: ${siteAvatar}\n  name: "${siteTitle}"\n  intro: "${siteSubtitle}"`,
-		)
-		// 归档页背景图
-		.replace(
-			/^archive:[\s\S]*?banner_img:.*$/m,
-			`archive:\n  banner_img: ${bannerImg}`,
-		)
-		// 分类页背景图
-		.replace(
-			/^category:[\s\S]*?banner_img:.*$/m,
-			`category:\n  banner_img: ${bannerImg}`,
-		)
-		// 标签页背景图
-		.replace(
-			/^tag:[\s\S]*?banner_img:.*$/m,
-			`tag:\n  banner_img: ${bannerImg}`,
-		)
-		// 自定义页背景图
-		.replace(
-			/^page:[\s\S]*?banner_img:.*$/m,
-			`page:\n  banner_img: ${bannerImg}`,
-		)
-		// 404页背景图
-		.replace(
-			/^page404:[\s\S]*?banner_img:.*$/m,
-			`page404:\n  banner_img: ${bannerImg}`,
-		)
-		// 友链页背景图
-		.replace(
-			/^links:[\s\S]*?banner_img:.*$/m,
-			`links:\n  banner_img: ${bannerImg}`,
-		);
+		// 替换 ${bannerImg} 占位符
+		.replace(/\$\{bannerImg\}/g, bannerImg)
+		// 替换 ${siteAvatar} 占位符
+		.replace(/\$\{siteAvatar\}/g, siteAvatar)
+		// 替换 ${siteTitle} 占位符
+		.replace(/\$\{siteTitle\}/g, siteTitle)
+		// 替换 ${siteSubtitle} 占位符
+		.replace(/\$\{siteSubtitle\}/g, siteSubtitle)
+		// 替换 ${siteAuthor} 占位符
+		.replace(/\$\{siteAuthor\}/g, siteAuthor);
 
 	fs.writeFileSync(targetConfigPath, configContent, "utf-8");
 }
